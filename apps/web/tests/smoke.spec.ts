@@ -25,8 +25,14 @@ test('source detail page loads afdc_ev with enabled fetch button', async ({ page
   await expect(page.getByTestId('fetch-button')).toBeEnabled()
 })
 
-test('source detail page for planned source shows disabled fetch button', async ({ page }) => {
+test('source detail page for epa_egrid shows enabled fetch button', async ({ page }) => {
   await page.goto('/sources/epa_egrid')
+  await expect(page.getByTestId('source-detail-page')).toBeVisible()
+  await expect(page.getByTestId('fetch-button')).toBeEnabled()
+})
+
+test('source detail page for not_implemented source shows disabled fetch button', async ({ page }) => {
+  await page.goto('/sources/epa_ejscreen')
   await expect(page.getByTestId('source-detail-page')).toBeVisible()
   await expect(page.getByTestId('fetch-button')).toBeDisabled()
 })

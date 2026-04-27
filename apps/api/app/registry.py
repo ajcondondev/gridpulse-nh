@@ -17,6 +17,8 @@ SOURCES: list[Source] = [
         data_geography="nh",
         phase_added=2,
         last_verified="2026-04-27",
+        is_real_data=False,
+        is_mock_data=True,
     ),
     Source(
         id="isone_csv",

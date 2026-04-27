@@ -7,8 +7,9 @@ router = APIRouter()
 
 
 @router.get("/sources", response_model=SourceList)
-def list_sources() -> SourceList:
-    return SourceList(sources=SOURCES, total=len(SOURCES))
+def list_sources(include_mock: bool = False) -> SourceList:
+    sources = [s for s in SOURCES if not s.is_mock_data or include_mock]
+    return SourceList(sources=sources, total=len(sources))
 
 
 @router.get("/sources/{source_id}", response_model=Source)

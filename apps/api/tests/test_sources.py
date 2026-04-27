@@ -14,10 +14,27 @@ def test_list_sources_returns_all():
     assert data["total"] > 0
 
 
-def test_list_sources_includes_mock():
+def test_list_sources_excludes_mock_by_default():
     res = client.get("/sources")
     ids = [s["id"] for s in res.json()["sources"]]
+    assert "mock_demand" not in ids
+
+
+def test_list_sources_includes_mock_with_param():
+    res = client.get("/sources?include_mock=true")
+    ids = [s["id"] for s in res.json()["sources"]]
     assert "mock_demand" in ids
+
+
+def test_production_sources_are_all_real_data():
+    res = client.get("/sources")
+    for source in res.json()["sources"]:
+        assert source.get("is_mock_data") is False, (
+            f"Source '{source['id']}' has is_mock_data=True but appears in the production list"
+        )
+        assert source.get("is_real_data") is True, (
+            f"Source '{source['id']}' has is_real_data=False but appears in the production list"
+        )
 
 
 def test_get_source_mock_demand():

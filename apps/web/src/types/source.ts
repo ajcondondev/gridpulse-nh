@@ -32,6 +32,8 @@ export interface Source {
   data_geography?: string
   phase_added?: number
   last_verified?: string
+  is_real_data?: boolean
+  is_mock_data?: boolean
 }
 
 export interface SourceList {

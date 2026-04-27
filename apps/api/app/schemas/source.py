@@ -40,6 +40,8 @@ class Source(BaseModel):
     data_geography: Optional[str] = None
     phase_added: Optional[int] = None
     last_verified: Optional[str] = None
+    is_real_data: bool = True
+    is_mock_data: bool = False
 
 
 class SourceList(BaseModel):
