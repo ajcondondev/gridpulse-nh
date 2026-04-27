@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+.venv
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node / frontend
+node_modules/
+dist/
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# Data (keep dirs, ignore content)
+data/raw/*
+data/cleaned/*
+data/exports/*
+data/metadata/*
+!data/raw/.gitkeep
+!data/cleaned/.gitkeep
+!data/exports/.gitkeep
+!data/metadata/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Playwright
+playwright-report/
+test-results/
+
+# AI / prompt / planning files — not for public repos
+CLAUDE.md
+.claude/
+prompts/
+reference/
+*prompt*.md
