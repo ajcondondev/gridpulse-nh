@@ -27,7 +27,7 @@ GridPulse NH demonstrates real-world data engineering patterns against live publ
 
 The project connects to three live APIs out of the box, includes a synthetic demand generator for offline development, and produces a joined weather × electricity demand analysis with a dual-axis visualization.
 
-> **Disclaimer:** Not affiliated with, endorsed by, or sponsored by Eversource Energy or any other utility company. All data is sourced from publicly available APIs and datasets.
+> **Disclaimer:** All data is sourced from publicly available APIs and datasets.
 
 ---
 
