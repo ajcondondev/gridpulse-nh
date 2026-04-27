@@ -25,7 +25,7 @@ GridPulse NH is a full-stack utility data engineering workbench focused on New H
 
 The app supports live public connectors for electricity demand, weather, EV charging, utility rates, emissions, flood zones, social vulnerability, and municipal geography, alongside a synthetic demand generator and a weather × demand analysis workflow.
 
-> **Disclaimer:** Not affiliated with Eversource Energy or any utility company. All data comes from publicly available APIs and government datasets.
+> **Disclaimer:** All data comes from publicly available APIs and government datasets.
 
 ---
 
