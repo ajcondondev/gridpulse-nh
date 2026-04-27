@@ -83,6 +83,33 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"EPA eGRID error: {e}")
 
+    if source_id == "cdc_svi":
+        from app.services.fetch_service import fetch_cdc_svi
+        try:
+            return fetch_cdc_svi()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"CDC SVI error: {e}")
+
+    if source_id == "fema_flood":
+        from app.services.fetch_service import fetch_fema_flood
+        try:
+            return fetch_fema_flood()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"FEMA flood error: {e}")
+
+    if source_id == "nh_geodata":
+        from app.services.fetch_service import fetch_nh_geodata
+        try:
+            return fetch_nh_geodata()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"NH Geodata error: {e}")
+
     return {
         "message": "Fetch not yet implemented for this source.",
         "source_id": source_id,

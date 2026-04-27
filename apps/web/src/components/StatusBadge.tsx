@@ -1,10 +1,41 @@
 import type { SourceStatus } from '../types/source'
 
-const statusConfig: Record<SourceStatus, { label: string; classes: string }> = {
-  active: { label: 'Active', classes: 'bg-emerald-100 text-emerald-800' },
-  mock: { label: 'Mock', classes: 'bg-blue-100 text-blue-800' },
-  planned: { label: 'Planned', classes: 'bg-gray-100 text-gray-600' },
-  unavailable: { label: 'Unavailable', classes: 'bg-red-100 text-red-700' },
+const statusConfig: Record<SourceStatus, { label: string; classes: string; title: string }> = {
+  active: {
+    label: 'Active',
+    classes: 'bg-emerald-100 text-emerald-800',
+    title: 'Live data — works now with no special setup',
+  },
+  mock: {
+    label: 'Mock',
+    classes: 'bg-blue-100 text-blue-800',
+    title: 'Generates synthetic data for testing — not real utility data',
+  },
+  requires_key: {
+    label: 'Requires Key',
+    classes: 'bg-amber-100 text-amber-800',
+    title: 'Connector is implemented but needs an API key configured in .env',
+  },
+  manual_import: {
+    label: 'Manual Import',
+    classes: 'bg-purple-100 text-purple-800',
+    title: 'User must download and import the file manually',
+  },
+  planned: {
+    label: 'Planned',
+    classes: 'bg-gray-100 text-gray-600',
+    title: 'Connector is planned but not yet implemented',
+  },
+  research: {
+    label: 'Evaluating',
+    classes: 'bg-orange-100 text-orange-700',
+    title: 'Source access is being evaluated — no confirmed stable API yet',
+  },
+  not_implemented: {
+    label: 'Not Implemented',
+    classes: 'bg-gray-100 text-gray-400',
+    title: 'Catalog placeholder only — no connector has been built',
+  },
 }
 
 interface Props {
@@ -12,10 +43,11 @@ interface Props {
 }
 
 export function StatusBadge({ status }: Props) {
-  const cfg = statusConfig[status]
+  const cfg = statusConfig[status] ?? statusConfig.not_implemented
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${cfg.classes}`}
+      title={cfg.title}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap cursor-default ${cfg.classes}`}
     >
       {cfg.label}
     </span>

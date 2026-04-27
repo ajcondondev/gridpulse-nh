@@ -5,6 +5,11 @@ import { PageHeader } from '../components/PageHeader'
 import { cleanedDownloadUrl, getDataset, getDatasetPreview, rawDownloadUrl } from '../services/datasetsApi'
 import type { Dataset, DatasetPreview } from '../types/dataset'
 
+function truncateCell(value: unknown, max = 60): string {
+  const s = String(value ?? '—')
+  return s.length > max ? s.slice(0, max) + '…' : s
+}
+
 export function DatasetDetailPage() {
   const { datasetId } = useParams<{ datasetId: string }>()
   const [dataset, setDataset] = useState<Dataset | null>(null)
@@ -142,8 +147,12 @@ export function DatasetDetailPage() {
                 {preview.rows.map((row, i) => (
                   <tr key={i} className="hover:bg-gray-50">
                     {preview.columns.map((col) => (
-                      <td key={col} className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono">
-                        {String(row[col] ?? '—')}
+                      <td
+                        key={col}
+                        className="px-3 py-2 text-gray-700 whitespace-nowrap font-mono"
+                        title={String(row[col] ?? '—')}
+                      >
+                        {truncateCell(row[col])}
                       </td>
                     ))}
                   </tr>

@@ -285,6 +285,153 @@ def fetch_noaa_weather() -> Dataset:
     return dataset
 
 
+def fetch_cdc_svi() -> Dataset:
+    from app.connectors.cdc_svi_connector import CDCSVIConnector
+
+    connector = CDCSVIConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"cdc_svi_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("cdc_svi", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["fetched_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "year", "state", "county", "fips", "location_name",
+        "svi_overall_percentile",
+        "socioeconomic_percentile",
+        "household_characteristics_percentile",
+        "racial_ethnic_minority_percentile",
+        "housing_transportation_percentile",
+        "source", "fetched_at",
+    ]
+    if "population" in df_clean.columns:
+        ordered_cols.insert(ordered_cols.index("source"), "population")
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "CDC SVI"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "CDC SVI",
+    )
+
+    cleaned_p = storage_service.cleaned_path("cdc_svi", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="cdc_svi",
+        name=f"CDC SVI NH — {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_fema_flood() -> Dataset:
+    from app.connectors.fema_flood_connector import FEMAFloodConnector
+
+    connector = FEMAFloodConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"fema_flood_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("fema_flood", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["fetched_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "feature_id", "flood_zone", "zone_subtype",
+        "county_fips", "county", "state",
+        "is_sfha", "panel_id", "geometry_type",
+        "source", "fetched_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "FEMA Flood"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "FEMA Flood",
+    )
+
+    cleaned_p = storage_service.cleaned_path("fema_flood", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    exceeded = result.get("exceeded_transfer_limit", False)
+    name = f"FEMA Flood Zones NH — {fetched_at.strftime('%Y-%m-%d')}"
+    if exceeded:
+        name += " (first 2000 records)"
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="fema_flood",
+        name=name,
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_nh_geodata() -> Dataset:
+    from app.connectors.nh_geodata_connector import NHGeodataConnector
+
+    connector = NHGeodataConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"nh_geodata_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("nh_geodata", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["fetched_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "town_name", "county_name", "state",
+        "state_fips", "county_fips", "town_fips",
+        "population_2020", "source", "fetched_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "NH Geodata"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "NH Geodata",
+    )
+
+    cleaned_p = storage_service.cleaned_path("nh_geodata", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="nh_geodata",
+        name=f"NH Municipal Geography (Census 2020) — {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_afdc_ev() -> Dataset:
     from app.connectors.afdc_connector import AFDCConnector
 

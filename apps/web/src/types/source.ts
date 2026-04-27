@@ -1,4 +1,11 @@
-export type SourceStatus = 'active' | 'unavailable' | 'mock' | 'planned'
+export type SourceStatus =
+  | 'active'
+  | 'requires_key'
+  | 'manual_import'
+  | 'planned'
+  | 'research'
+  | 'not_implemented'
+  | 'mock'
 
 export type SourceCategory =
   | 'electricity'
@@ -19,6 +26,12 @@ export interface Source {
   update_frequency?: string
   data_format?: string
   notes?: string
+  requires_api_key?: boolean
+  auth_type?: string
+  access_method?: string
+  data_geography?: string
+  phase_added?: number
+  last_verified?: string
 }
 
 export interface SourceList {

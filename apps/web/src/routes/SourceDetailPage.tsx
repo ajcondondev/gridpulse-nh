@@ -6,6 +6,16 @@ import { fetchSource, getSource } from '../services/sourcesApi'
 import type { Dataset } from '../types/dataset'
 import type { Source } from '../types/source'
 
+const ACCESS_METHOD_LABELS: Record<string, string> = {
+  api: 'Live API (JSON)',
+  arcgis_rest: 'ArcGIS REST API',
+  csv_download: 'CSV Download',
+  web_scrape: 'Web Scrape (HTML)',
+  pdf: 'PDF / Document',
+  manual: 'Manual Import',
+  generated: 'Generated (synthetic)',
+}
+
 type FetchState =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -55,10 +65,12 @@ export function SourceDetailPage() {
     'afdc_ev',
     'openei_rates',
     'epa_egrid',
+    'cdc_svi',
+    'fema_flood',
+    'nh_geodata',
   ])
   const canFetch = FETCHABLE_IDS.has(source.id)
-  const usesPublicDownload = source.id === 'isone_csv'
-  const noKeyRequired = usesPublicDownload || source.id === 'afdc_ev' || source.id === 'epa_egrid'
+  const noKeyRequired = !source.requires_api_key
 
   return (
     <div data-testid="source-detail-page">
@@ -113,6 +125,34 @@ export function SourceDetailPage() {
                   {source.url}
                 </a>
               </dd>
+            </div>
+          )}
+          {source.access_method && (
+            <div>
+              <dt className="text-xs font-medium text-gray-500">Access Method</dt>
+              <dd className="mt-0.5 text-gray-900">{ACCESS_METHOD_LABELS[source.access_method] ?? source.access_method}</dd>
+            </div>
+          )}
+          {source.requires_api_key != null && (
+            <div>
+              <dt className="text-xs font-medium text-gray-500">API Key Required</dt>
+              <dd className="mt-0.5 text-gray-900">
+                {source.requires_api_key
+                  ? <span className="text-amber-700">Yes — see .env setup in README</span>
+                  : <span className="text-emerald-700">No</span>}
+              </dd>
+            </div>
+          )}
+          {source.phase_added != null && (
+            <div>
+              <dt className="text-xs font-medium text-gray-500">Phase Added</dt>
+              <dd className="mt-0.5 text-gray-900">Phase {source.phase_added}</dd>
+            </div>
+          )}
+          {source.last_verified && (
+            <div>
+              <dt className="text-xs font-medium text-gray-500">Last Verified</dt>
+              <dd className="mt-0.5 text-gray-900">{source.last_verified}</dd>
             </div>
           )}
           {source.notes && (

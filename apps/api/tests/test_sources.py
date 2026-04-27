@@ -70,3 +70,84 @@ def test_fetch_source_returns_not_implemented_message():
 def test_fetch_source_unknown_returns_404():
     res = client.post("/sources/unknown_source/fetch")
     assert res.status_code == 404
+
+
+# ── Phase 14: status model and metadata accuracy ────────────────────────────
+
+VALID_STATUSES = {"active", "requires_key", "manual_import", "planned", "research", "not_implemented", "mock"}
+
+
+def test_all_source_statuses_are_valid():
+    res = client.get("/sources")
+    for source in res.json()["sources"]:
+        assert source["status"] in VALID_STATUSES, (
+            f"Source '{source['id']}' has unknown status '{source['status']}'"
+        )
+
+
+def test_active_sources_have_last_verified():
+    res = client.get("/sources")
+    for source in res.json()["sources"]:
+        if source["status"] == "active":
+            assert source.get("last_verified"), (
+                f"Active source '{source['id']}' is missing last_verified"
+            )
+
+
+def test_eia_requires_key_status():
+    res = client.get("/sources/eia_isone_load")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "requires_key"
+    assert data["requires_api_key"] is True
+
+
+def test_noaa_requires_key_status():
+    res = client.get("/sources/noaa_weather")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "requires_key"
+    assert data["requires_api_key"] is True
+
+
+def test_isone_csv_has_no_key_required():
+    res = client.get("/sources/isone_csv")
+    data = res.json()
+    assert data["requires_api_key"] is False
+
+
+def test_source_detail_includes_phase_added():
+    res = client.get("/sources/cdc_svi")
+    data = res.json()
+    assert data["phase_added"] == 12
+
+
+def test_source_detail_includes_access_method():
+    res = client.get("/sources/fema_flood")
+    data = res.json()
+    assert data["access_method"] == "arcgis_rest"
+
+
+def test_not_implemented_sources_have_correct_status():
+    not_implemented_ids = ["epa_ejscreen", "nhsaves", "nh_puc", "eversource_sustainability"]
+    for source_id in not_implemented_ids:
+        res = client.get(f"/sources/{source_id}")
+        assert res.status_code == 200
+        assert res.json()["status"] == "not_implemented", (
+            f"{source_id} should be not_implemented"
+        )
+
+
+def test_manchester_gis_is_research():
+    res = client.get("/sources/manchester_gis")
+    assert res.status_code == 200
+    assert res.json()["status"] == "research"
+
+
+def test_source_catalog_docs_exist():
+    import pathlib
+    docs = pathlib.Path(__file__).parent.parent.parent.parent / "docs"
+    assert (docs / "source_catalog.md").exists()
+    assert (docs / "source_roadmap.md").exists()
+    assert (docs / "progress_tracker.md").exists()
+    assert (docs / "data_source_disclaimers.md").exists()
