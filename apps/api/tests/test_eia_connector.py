@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from unittest.mock import MagicMock, patch
 
 from app import config
 from app.connectors.eia_connector import EIAConnector
@@ -79,5 +80,48 @@ def test_clean_drops_zero_and_null_demand(tmp_path):
     ).to_csv(raw_csv, index=False)
 
     df = connector.clean(raw_csv)
+    assert len(df) == 1
+    assert df["demand_mw"].iloc[0] == 12000
+
+
+def _mock_response(payload: dict) -> MagicMock:
+    mock = MagicMock()
+    mock.raise_for_status = MagicMock()
+    mock.json.return_value = payload
+    return mock
+
+
+def test_fetch_raises_on_missing_records(monkeypatch):
+    monkeypatch.setattr(config.settings, "eia_api_key", "test-key")
+    with patch(
+        "app.connectors.eia_connector.httpx.get",
+        return_value=_mock_response({"response": {"data": []}}),
+    ):
+        with pytest.raises(ValueError, match="returned no data"):
+            EIAConnector().fetch()
+
+
+def test_fetch_raises_on_missing_columns(monkeypatch):
+    monkeypatch.setattr(config.settings, "eia_api_key", "test-key")
+    with patch(
+        "app.connectors.eia_connector.httpx.get",
+        return_value=_mock_response({"response": {"data": [{"period": "2026-04-27T00"}]}}),
+    ):
+        with pytest.raises(ValueError, match="missing expected columns"):
+            EIAConnector().fetch()
+
+
+def test_clean_deduplicates_duplicate_timestamps(tmp_path):
+    raw_csv = tmp_path / "raw.csv"
+    pd.DataFrame(
+        {
+            "period": ["2026-04-27T00", "2026-04-27T00", "bad-timestamp"],
+            "respondent-name": ["ISO New England", "ISO New England", "ISO New England"],
+            "value": [11000, 12000, 13000],
+        }
+    ).to_csv(raw_csv, index=False)
+
+    df = EIAConnector().clean(raw_csv)
+
     assert len(df) == 1
     assert df["demand_mw"].iloc[0] == 12000

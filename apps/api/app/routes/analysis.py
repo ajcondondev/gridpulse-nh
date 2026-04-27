@@ -20,16 +20,13 @@ def create_join() -> Dataset:
 
 @router.get("/weather-demand/latest", response_model=Dataset)
 def get_latest_join() -> Dataset:
-    joins = [
-        d for d in dataset_service.list_datasets()
-        if d.source_id == "weather_demand_analysis"
-    ]
-    if not joins:
+    latest_join = dataset_service.latest_dataset("weather_demand_analysis", require_cleaned=True)
+    if not latest_join:
         raise HTTPException(
             status_code=404,
             detail="No weather-demand analysis found. POST /analysis/weather-demand/join to create one.",
         )
-    return joins[0]
+    return latest_join
 
 
 @router.get("/weather-demand/{join_id}/download")

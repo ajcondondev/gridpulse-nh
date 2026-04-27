@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from unittest.mock import MagicMock, patch
 
 from app import config
 from app.connectors.noaa_connector import NOAAConnector
@@ -106,3 +107,43 @@ def test_clean_multiple_days_sorted(tmp_path):
     dates = list(df["date"])
     assert dates == sorted(dates)
     assert len(df) == 2
+
+
+def _mock_response(payload: dict) -> MagicMock:
+    mock = MagicMock()
+    mock.raise_for_status = MagicMock()
+    mock.json.return_value = payload
+    return mock
+
+
+def test_fetch_raises_on_empty_results(monkeypatch):
+    monkeypatch.setattr(config.settings, "noaa_token", "token")
+    with patch(
+        "app.connectors.noaa_connector.httpx.get",
+        return_value=_mock_response({"results": []}),
+    ):
+        with pytest.raises(ValueError, match="returned no data"):
+            NOAAConnector().fetch()
+
+
+def test_fetch_raises_on_missing_columns(monkeypatch):
+    monkeypatch.setattr(config.settings, "noaa_token", "token")
+    with patch(
+        "app.connectors.noaa_connector.httpx.get",
+        return_value=_mock_response({"results": [{"date": "2026-04-26"}]}),
+    ):
+        with pytest.raises(ValueError, match="missing expected columns"):
+            NOAAConnector().fetch()
+
+
+def test_clean_drops_invalid_rows_and_deduplicates(tmp_path):
+    raw = _write_raw(tmp_path, [
+        {"date": "bad-date", "datatype": "TAVG", "station": "GHCND:USW00014745", "value": 50},
+        {"date": "2026-04-26T00:00:00", "datatype": "TAVG", "station": "GHCND:USW00014745", "value": 60},
+        {"date": "2026-04-26T00:00:00", "datatype": "TAVG", "station": "GHCND:USW00014745", "value": 61},
+    ])
+
+    df = NOAAConnector().clean(raw)
+
+    assert len(df) == 1
+    assert df["temp_avg_f"].iloc[0] == 60

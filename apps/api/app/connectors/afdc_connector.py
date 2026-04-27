@@ -1,23 +1,22 @@
-from pathlib import Path
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 import pandas as pd
 
-from app.connectors.base import BaseConnector
 from app.config import settings
+from app.connectors.base import BaseConnector
 
 
 class AFDCConnector(BaseConnector):
-    """NREL Alternative Fuels Data Center — EV charging stations in NH.
-
-    Uses DEMO_KEY by default (30 req/day). Set NREL_API_KEY for higher limits.
-    """
+    """NREL Alternative Fuels Data Center EV charging stations in NH."""
 
     source_id = "afdc_ev"
     ENDPOINT = "https://developer.nrel.gov/api/alt-fuel-stations/v1.json"
+    REQUIRED_FETCH_COLUMNS = {"station_name", "latitude", "longitude"}
 
     _CLEAN_COLS = {
+        "id": "station_id",
         "station_name": "station_name",
         "city": "city",
         "state": "state",
@@ -32,14 +31,7 @@ class AFDCConnector(BaseConnector):
     }
 
     def fetch(self) -> dict:
-        api_key = settings.nrel_api_key
-        if not api_key:
-            raise ValueError(
-                "NREL_API_KEY is not configured. "
-                "Set it in .env — free registration at developer.nrel.gov. "
-                "DEMO_KEY also works for low-volume testing."
-            )
-
+        api_key = settings.nrel_api_key or "DEMO_KEY"
         params = {
             "api_key": api_key,
             "fuel_type": "ELEC",
@@ -53,9 +45,24 @@ class AFDCConnector(BaseConnector):
         data = response.json()
 
         stations = data.get("fuel_stations", [])
-        df = pd.DataFrame(stations) if stations else pd.DataFrame()
+        if not isinstance(stations, list):
+            raise ValueError("AFDC response missing 'fuel_stations' list.")
+        if not stations:
+            raise ValueError("AFDC API returned no charging stations for the current query.")
 
-        return {"dataframe": df, "fetched_at": datetime.now(timezone.utc)}
+        df = pd.DataFrame(stations)
+        missing = self.REQUIRED_FETCH_COLUMNS - set(df.columns)
+        if missing:
+            raise ValueError(
+                f"AFDC response missing expected columns: {sorted(missing)}. "
+                f"Columns found: {list(df.columns)}."
+            )
+
+        return {
+            "dataframe": df,
+            "fetched_at": datetime.now(timezone.utc),
+            "row_count": len(df),
+        }
 
     def clean(self, raw_path: Path) -> pd.DataFrame:
         df = pd.read_csv(raw_path, low_memory=False)
@@ -63,12 +70,21 @@ class AFDCConnector(BaseConnector):
         available = {k: v for k, v in self._CLEAN_COLS.items() if k in df.columns}
         df = df[list(available.keys())].rename(columns=available)
 
-        # Port counts arrive as float (NaN for absent) — fill with 0 and cast to int
         for port_col in ("level1_ports", "level2_ports", "dc_fast_ports"):
             if port_col in df.columns:
                 df[port_col] = df[port_col].fillna(0).astype(int)
 
         df = df.dropna(subset=["station_name", "latitude", "longitude"])
+        if "station_id" in df.columns:
+            df = df.drop_duplicates(subset=["station_id"], keep="last")
+        else:
+            df = df.drop_duplicates(
+                subset=["station_name", "city", "state", "latitude", "longitude"],
+                keep="last",
+            )
         df["source"] = "AFDC NREL"
 
-        return df.reset_index(drop=True)
+        df = df.reset_index(drop=True)
+        if df.empty:
+            raise ValueError("AFDC cleaned dataset is empty after validation.")
+        return df

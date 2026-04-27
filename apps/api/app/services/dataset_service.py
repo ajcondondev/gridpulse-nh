@@ -33,4 +33,24 @@ def list_datasets() -> list[Dataset]:
                 datasets.append(Dataset.model_validate(json.load(f)))
         except Exception:
             pass
+    datasets.sort(
+        key=lambda d: (
+            d.fetched_at is not None,
+            d.fetched_at or 0,
+            d.id,
+        ),
+        reverse=True,
+    )
     return datasets
+
+
+def latest_dataset(source_id: str, require_cleaned: bool = False) -> Optional[Dataset]:
+    for dataset in list_datasets():
+        if dataset.source_id != source_id or dataset.status != "ready":
+            continue
+        if require_cleaned and (
+            not dataset.cleaned_path or not Path(dataset.cleaned_path).exists()
+        ):
+            continue
+        return dataset
+    return None

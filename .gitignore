@@ -50,3 +50,5 @@ CLAUDE.md
 prompts/
 reference/
 *prompt*.md
+apps/api/.tmp_pytest/
+data/test_tmp/

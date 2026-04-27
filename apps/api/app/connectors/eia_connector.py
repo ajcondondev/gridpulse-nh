@@ -9,7 +9,7 @@ TODO: Verify endpoint URL, query parameters, and response schema with a real EIA
       2026-04-27 but have NOT been confirmed against a live response.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -25,6 +25,7 @@ class EIAConnector(BaseConnector):
     # TODO: Confirm this is the correct ISO-NE respondent code in the EIA v2 RTO dataset.
     REGION_CODE = "ISNE"
     BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-data/data/"
+    REQUIRED_FETCH_COLUMNS = {"period", "value"}
 
     def fetch(self) -> dict:
         if not settings.eia_api_key:
@@ -33,7 +34,7 @@ class EIAConnector(BaseConnector):
                 "Register at https://www.eia.gov/opendata/ and set EIA_API_KEY in your .env file."
             )
 
-        now = datetime.utcnow().replace(second=0, microsecond=0)
+        now = datetime.now(timezone.utc).replace(tzinfo=None, second=0, microsecond=0)
 
         # TODO: Verify these parameters produce correct ISO-NE hourly demand data.
         # Reference: https://api.eia.gov/v2/electricity/rto/region-data/data/?api_key=DEMO
@@ -52,16 +53,28 @@ class EIAConnector(BaseConnector):
         response.raise_for_status()
 
         payload = response.json()
+        response_payload = payload.get("response")
+        if not isinstance(response_payload, dict):
+            raise ValueError("EIA response missing 'response' object.")
 
-        # TODO: Confirm response structure. Expected: payload["response"]["data"]
-        records = payload.get("response", {}).get("data", [])
-        if not records:
+        records = response_payload.get("data", [])
+        if not isinstance(records, list) or not records:
             raise ValueError(
                 "EIA API returned no data. "
                 "Verify the endpoint, region code, and query parameters are correct."
             )
 
         df = pd.DataFrame(records)
+        missing = self.REQUIRED_FETCH_COLUMNS - set(df.columns)
+        if missing:
+            raise ValueError(
+                f"EIA response missing expected columns: {sorted(missing)}. "
+                f"Columns found: {list(df.columns)}."
+            )
+
+        if df.empty:
+            raise ValueError("EIA API returned an empty dataset after parsing.")
+
         return {"dataframe": df, "fetched_at": now, "row_count": len(df)}
 
     def clean(self, raw_path: Path) -> pd.DataFrame:
@@ -89,7 +102,8 @@ class EIAConnector(BaseConnector):
                 "Verify EIA API response schema."
             )
 
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce", utc=True)
+        df["timestamp"] = df["timestamp"].dt.tz_localize(None)
         df["demand_mw"] = pd.to_numeric(df["demand_mw"], errors="coerce")
         df["source"] = "EIA"
 
@@ -98,6 +112,10 @@ class EIAConnector(BaseConnector):
 
         df = df.dropna(subset=["timestamp", "demand_mw"])
         df = df[df["demand_mw"] > 0]
+        df = df.drop_duplicates(subset=["timestamp"], keep="last")
         df = df.sort_values("timestamp").reset_index(drop=True)
+
+        if df.empty:
+            raise ValueError("EIA cleaned dataset is empty after validation.")
 
         return df[["timestamp", "region", "demand_mw", "source"]]

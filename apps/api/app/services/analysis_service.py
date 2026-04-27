@@ -5,20 +5,16 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-from app.config import settings
 from app.schemas.dataset import Dataset
 from app.services import dataset_service, storage_service
 
 
 def _load_latest_cleaned(source_id: str) -> Optional[pd.DataFrame]:
     """Return the cleaned DataFrame for the most recently fetched dataset of a given source."""
-    candidates = [
-        d for d in dataset_service.list_datasets()
-        if d.source_id == source_id and d.cleaned_path
-    ]
-    if not candidates:
+    dataset = dataset_service.latest_dataset(source_id, require_cleaned=True)
+    if dataset is None or not dataset.cleaned_path:
         return None
-    p = Path(candidates[0].cleaned_path)
+    p = Path(dataset.cleaned_path)
     if not p.exists():
         return None
     return pd.read_csv(p)
@@ -26,7 +22,9 @@ def _load_latest_cleaned(source_id: str) -> Optional[pd.DataFrame]:
 
 def _aggregate_demand_to_daily(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df["demand_mw"] = pd.to_numeric(df["demand_mw"], errors="coerce")
+    df = df.dropna(subset=["timestamp", "demand_mw"])
     df["date"] = df["timestamp"].dt.date
     daily = (
         df.groupby("date")
@@ -39,6 +37,30 @@ def _aggregate_demand_to_daily(df: pd.DataFrame) -> pd.DataFrame:
     )
     daily["daily_peak_mw"] = daily["daily_peak_mw"].round(1)
     return daily
+
+
+def _load_latest_demand_dataset() -> tuple[Optional[pd.DataFrame], Optional[str]]:
+    df_eia = _load_latest_cleaned("eia_isone_load")
+    if df_eia is not None:
+        return df_eia, "eia_isone_load"
+
+    df_mock = _load_latest_cleaned("mock_demand")
+    if df_mock is not None:
+        return df_mock, "mock_demand"
+
+    return None, None
+
+
+def _prepare_weather_for_join(df_weather: pd.DataFrame) -> pd.DataFrame:
+    weather = df_weather.copy()
+    weather["date"] = pd.to_datetime(weather["date"], errors="coerce").dt.date
+    for col in ["temp_avg_f", "hdd", "cdd"]:
+        weather[col] = pd.to_numeric(weather[col], errors="coerce")
+    weather = weather.dropna(subset=["date"])
+    weather = weather.sort_values("date").drop_duplicates(subset=["date"], keep="last")
+    return weather[["date", "temp_avg_f", "hdd", "cdd", "source"]].rename(
+        columns={"source": "weather_source"}
+    )
 
 
 def _synthetic_weather(dates: list) -> pd.DataFrame:
@@ -62,32 +84,36 @@ def _synthetic_weather(dates: list) -> pd.DataFrame:
 def create_weather_demand_join() -> Dataset:
     now = datetime.now(timezone.utc).replace(tzinfo=None, second=0, microsecond=0)
 
-    # Demand: prefer mock, fall back to EIA
-    df_demand = _load_latest_cleaned("mock_demand")
-    if df_demand is None:
-        df_demand = _load_latest_cleaned("eia_isone_load")
-    if df_demand is None:
+    df_demand, demand_source_id = _load_latest_demand_dataset()
+    if df_demand is None or demand_source_id is None:
         raise ValueError(
             "No demand dataset found. "
             "Fetch Mock Electricity Demand (or EIA ISO-NE Load) first."
         )
 
     daily = _aggregate_demand_to_daily(df_demand)
+    if daily.empty:
+        raise ValueError("Demand dataset could not be aggregated into daily peaks.")
 
-    # Weather: NOAA if available, otherwise synthetic
     df_weather = _load_latest_cleaned("noaa_weather")
     if df_weather is not None:
-        df_weather["date"] = pd.to_datetime(df_weather["date"]).dt.date
-        df_joined = daily.merge(
-            df_weather[["date", "temp_avg_f", "hdd", "cdd", "source"]].rename(
-                columns={"source": "weather_source"}
-            ),
-            on="date",
-            how="left",
-        )
+        weather = _prepare_weather_for_join(df_weather)
+        df_joined = daily.merge(weather, on="date", how="inner")
+        if df_joined.empty:
+            raise ValueError(
+                "NOAA weather data does not overlap with the latest demand dataset. "
+                "Fetch more recent EIA/NOAA data and try again."
+            )
     else:
+        if demand_source_id != "mock_demand":
+            raise ValueError(
+                "NOAA weather dataset not found. Fetch NOAA Weather before generating a live weather-demand join."
+            )
         synthetic = _synthetic_weather(list(daily["date"]))
         df_joined = daily.merge(synthetic, on="date", how="left")
+
+    if df_joined.empty:
+        raise ValueError("Weather-demand join produced no rows.")
 
     df_joined["created_at"] = now.isoformat()
 

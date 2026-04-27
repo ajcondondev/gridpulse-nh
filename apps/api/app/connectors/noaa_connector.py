@@ -9,7 +9,7 @@ TODO: Verify station ID, endpoint, and response schema with a real NOAA_TOKEN.
       2026-04-27 but have NOT been confirmed against a live response.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -24,6 +24,7 @@ class NOAAConnector(BaseConnector):
 
     BASE_URL = "https://www.ncdc.noaa.gov/cdo-web/api/v2/data"
     DATASET_ID = "GHCND"
+    REQUIRED_FETCH_COLUMNS = {"date", "datatype", "station", "value"}
 
     # TODO: Confirm this is the correct NOAA GHCND station ID for Manchester, NH.
     # Manchester-Boston Regional Airport — closest high-quality GHCND station.
@@ -39,7 +40,7 @@ class NOAAConnector(BaseConnector):
                 "and set NOAA_TOKEN in your .env file."
             )
 
-        now = datetime.utcnow().replace(second=0, microsecond=0)
+        now = datetime.now(timezone.utc).replace(tzinfo=None, second=0, microsecond=0)
         end_date = now.date()
         start_date = end_date - timedelta(days=self.DAYS_BACK)
 
@@ -61,9 +62,8 @@ class NOAAConnector(BaseConnector):
 
         payload = response.json()
 
-        # TODO: Confirm response structure. Expected key: payload["results"]
         results = payload.get("results", [])
-        if not results:
+        if not isinstance(results, list) or not results:
             raise ValueError(
                 "NOAA API returned no data. "
                 "Verify the station ID, date range, and token are correct. "
@@ -71,6 +71,14 @@ class NOAAConnector(BaseConnector):
             )
 
         df = pd.DataFrame(results)
+        missing = self.REQUIRED_FETCH_COLUMNS - set(df.columns)
+        if missing:
+            raise ValueError(
+                f"NOAA response missing expected columns: {sorted(missing)}. "
+                f"Columns found: {list(df.columns)}."
+            )
+        if df.empty:
+            raise ValueError("NOAA API returned an empty dataset after parsing.")
         return {"dataframe": df, "fetched_at": now, "row_count": len(df)}
 
     def clean(self, raw_path: Path) -> pd.DataFrame:
@@ -88,8 +96,9 @@ class NOAAConnector(BaseConnector):
                 "Verify NOAA CDO API response schema."
             )
 
-        df["date"] = pd.to_datetime(df["date"]).dt.date
+        df["date"] = pd.to_datetime(df["date"], errors="coerce", format="mixed").dt.date
         df["value"] = pd.to_numeric(df["value"], errors="coerce")
+        df = df.dropna(subset=["date", "datatype", "station", "value"])
 
         # Pivot long → wide: one row per (date, station), columns per datatype.
         pivot = (
@@ -141,4 +150,8 @@ class NOAAConnector(BaseConnector):
             if col not in pivot.columns:
                 pivot[col] = None
 
-        return pivot[out_cols].sort_values("date").reset_index(drop=True)
+        pivot = pivot[out_cols].sort_values(["date", "station"]).reset_index(drop=True)
+        pivot = pivot.drop_duplicates(subset=["date", "station"], keep="last")
+        if pivot.empty:
+            raise ValueError("NOAA cleaned dataset is empty after validation.")
+        return pivot
