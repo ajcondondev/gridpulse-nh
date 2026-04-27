@@ -43,9 +43,24 @@ def test_get_source_isone_csv_is_active():
     assert data["data_format"] == "CSV"
 
 
+def test_get_source_openei_rates_is_active():
+    res = client.get("/sources/openei_rates")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["id"] == "openei_rates"
+    assert data["status"] == "active"
+
+
+def test_get_source_epa_egrid_is_active():
+    res = client.get("/sources/epa_egrid")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["id"] == "epa_egrid"
+    assert data["status"] == "active"
+
+
 def test_fetch_source_returns_not_implemented_message():
-    # epa_egrid has no connector yet — should return the "not implemented" stub
-    res = client.post("/sources/epa_egrid/fetch")
+    res = client.post("/sources/epa_ejscreen/fetch")
     assert res.status_code == 200
     data = res.json()
     assert "message" in data

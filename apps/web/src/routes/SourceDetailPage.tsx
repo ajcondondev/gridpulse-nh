@@ -47,10 +47,18 @@ export function SourceDetailPage() {
     )
   if (!source) return <p className="text-gray-500 text-sm">Source not found.</p>
 
-  const FETCHABLE_IDS = new Set(['mock_demand', 'eia_isone_load', 'isone_csv', 'noaa_weather', 'afdc_ev'])
+  const FETCHABLE_IDS = new Set([
+    'mock_demand',
+    'eia_isone_load',
+    'isone_csv',
+    'noaa_weather',
+    'afdc_ev',
+    'openei_rates',
+    'epa_egrid',
+  ])
   const canFetch = FETCHABLE_IDS.has(source.id)
   const usesPublicDownload = source.id === 'isone_csv'
-  const noKeyRequired = usesPublicDownload || source.id === 'afdc_ev'
+  const noKeyRequired = usesPublicDownload || source.id === 'afdc_ev' || source.id === 'epa_egrid'
 
   return (
     <div data-testid="source-detail-page">

@@ -138,6 +138,107 @@ def fetch_isone_csv() -> Dataset:
     return dataset
 
 
+def fetch_openei_rates() -> Dataset:
+    from app.connectors.openei_rates_connector import OpenEIRatesConnector
+
+    connector = OpenEIRatesConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"openei_rates_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("openei_rates", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "rate_id", "utility_name", "rate_name", "sector", "service_type",
+        "approved", "is_default", "start_date", "end_date",
+        "fixed_charge", "fixed_charge_units",
+        "min_charge", "min_charge_units",
+        "energy_rate_kwh", "description", "rate_uri",
+        "source", "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "OpenEI utility rates"),
+        ordered_cols,
+        "OpenEI utility rates",
+    )
+
+    cleaned_p = storage_service.cleaned_path("openei_rates", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="openei_rates",
+        name=f"OpenEI Utility Rates - {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_epa_egrid() -> Dataset:
+    from app.connectors.egrid_connector import EGridConnector
+
+    connector = EGridConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"epa_egrid_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("epa_egrid", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "subregion",
+        "co2_lb_per_mwh",
+        "ch4_lb_per_mwh",
+        "n2o_lb_per_mwh",
+        "co2e_lb_per_mwh",
+        "annual_nox_lb_per_mwh",
+        "ozone_season_nox_lb_per_mwh",
+        "so2_lb_per_mwh",
+        "data_year",
+        "source",
+        "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "EPA eGRID"),
+        ordered_cols,
+        "EPA eGRID",
+    )
+
+    cleaned_p = storage_service.cleaned_path("epa_egrid", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="epa_egrid",
+        name=f"EPA eGRID Subregion Emissions - {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_noaa_weather() -> Dataset:
     from app.connectors.noaa_connector import NOAAConnector
 

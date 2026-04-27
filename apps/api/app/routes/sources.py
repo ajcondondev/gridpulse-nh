@@ -65,6 +65,24 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"AFDC API error: {e}")
 
+    if source_id == "openei_rates":
+        from app.services.fetch_service import fetch_openei_rates
+        try:
+            return fetch_openei_rates()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"OpenEI utility rates error: {e}")
+
+    if source_id == "epa_egrid":
+        from app.services.fetch_service import fetch_epa_egrid
+        try:
+            return fetch_epa_egrid()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"EPA eGRID error: {e}")
+
     return {
         "message": "Fetch not yet implemented for this source.",
         "source_id": source_id,

@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     eia_api_key: str = ""
+    openei_api_key: str = ""
     noaa_token: str = ""
     nrel_api_key: str = "DEMO_KEY"
     api_data_dir: str = "../../data"
