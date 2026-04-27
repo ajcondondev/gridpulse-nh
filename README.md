@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![pandas](https://img.shields.io/badge/pandas-2-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
-[![Tests](https://img.shields.io/badge/tests-51_passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#testing)
+[![Tests](https://img.shields.io/badge/tests-69_passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#testing)
 [![License](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](LICENSE)
 
 A full-stack data engineering portfolio project for pulling, cleaning, previewing, and exporting public utility-related datasets — focused on New Hampshire, ISO New England, EV infrastructure, weather-driven demand, and environmental data.
@@ -49,7 +49,7 @@ The project connects to three live APIs out of the box, includes a synthetic dem
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, React Router v6, Recharts |
 | **Backend** | Python 3.11+, FastAPI, pandas, pydantic v2, uvicorn, httpx |
 | **Storage** | Local filesystem — `/data/raw`, `/data/cleaned`, `/data/exports`, `/data/metadata` |
-| **Testing** | pytest (51 backend tests), Playwright (frontend smoke tests) |
+| **Testing** | pytest (69 backend tests), Playwright (frontend smoke tests) |
 
 ---
 
@@ -178,7 +178,7 @@ POST /sources/{id}/fetch
 | Mock Electricity Demand | Electricity | `mock` | Synthetic — diurnal + weekend curves. No key required. |
 | EIA ISO-NE Hourly Load | Electricity | `planned` | Connector built — requires `EIA_API_KEY` |
 | NOAA Weather | Weather | `planned` | Connector built — requires `NOAA_TOKEN` |
-| ISO-NE CSV Downloads | Electricity | `planned` | Manual download workflow |
+| **ISO-NE CSV Downloads** | Electricity | **`active`** | Live public Hourly Real-Time System Demand CSV â€” no key required |
 | **AFDC EV Charging Stations** | EV | **`active`** | Live — `DEMO_KEY` works out of the box |
 | EPA eGRID | Environmental | `planned` | Annual emissions data |
 | FEMA Flood Maps | Resilience | `planned` | GeoJSON flood zone boundaries |

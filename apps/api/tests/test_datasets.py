@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock, patch
 
 from app.main import app
+from app import config
 
 client = TestClient(app)
 
@@ -86,3 +88,38 @@ def test_download_raw_returns_csv():
     res = client.get(f"/datasets/{dataset_id}/download/raw")
     assert res.status_code == 200
     assert "text/csv" in res.headers["content-type"]
+
+
+def _mock_isone_response(body: str) -> MagicMock:
+    mock = MagicMock()
+    mock.raise_for_status = MagicMock()
+    mock.text = body
+    return mock
+
+
+def test_isone_dataset_preview_and_download(monkeypatch, tmp_path):
+    monkeypatch.setattr(config.settings, "api_data_dir", str(tmp_path))
+    csv_text = "Date,Hour Ending,Native Demand\n2026-04-26,1,10000\n2026-04-26,2,10100\n"
+    with patch(
+        "app.connectors.isone_csv_connector.httpx.get",
+        return_value=_mock_isone_response(csv_text),
+    ):
+        fetch_res = client.post("/sources/isone_csv/fetch")
+
+    assert fetch_res.status_code == 200
+    dataset_id = fetch_res.json()["id"]
+
+    preview = client.get(f"/datasets/{dataset_id}/preview")
+    assert preview.status_code == 200
+    assert set(["timestamp", "region", "demand_mw", "source", "pulled_at"]).issubset(
+        set(preview.json()["columns"])
+    )
+    assert len(preview.json()["rows"]) == 2
+
+    cleaned = client.get(f"/datasets/{dataset_id}/download/cleaned")
+    assert cleaned.status_code == 200
+    assert "timestamp,region,demand_mw,source,pulled_at" in cleaned.text.splitlines()[0]
+
+    raw = client.get(f"/datasets/{dataset_id}/download/raw")
+    assert raw.status_code == 200
+    assert "Date,Hour Ending,Native Demand" in raw.text.splitlines()[0]

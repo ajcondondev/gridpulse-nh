@@ -47,8 +47,10 @@ export function SourceDetailPage() {
     )
   if (!source) return <p className="text-gray-500 text-sm">Source not found.</p>
 
-  const FETCHABLE_IDS = new Set(['mock_demand', 'eia_isone_load', 'noaa_weather', 'afdc_ev'])
+  const FETCHABLE_IDS = new Set(['mock_demand', 'eia_isone_load', 'isone_csv', 'noaa_weather', 'afdc_ev'])
   const canFetch = FETCHABLE_IDS.has(source.id)
+  const usesPublicDownload = source.id === 'isone_csv'
+  const noKeyRequired = usesPublicDownload || source.id === 'afdc_ev'
 
   return (
     <div data-testid="source-detail-page">
@@ -144,9 +146,15 @@ export function SourceDetailPage() {
           </p>
         )}
 
-        {fetchState.status === 'idle' && canFetch && source.status !== 'mock' && (
+        {fetchState.status === 'idle' && canFetch && source.status !== 'mock' && !noKeyRequired && (
           <p className="mt-2 text-xs text-gray-400">
             Requires an API key configured in the backend .env file. See README for setup.
+          </p>
+        )}
+
+        {fetchState.status === 'idle' && canFetch && noKeyRequired && (
+          <p className="mt-2 text-xs text-gray-400">
+            Fetches from a live public source with no API key required.
           </p>
         )}
 

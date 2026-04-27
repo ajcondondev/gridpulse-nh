@@ -34,6 +34,15 @@ def test_get_source_not_found():
     assert res.status_code == 404
 
 
+def test_get_source_isone_csv_is_active():
+    res = client.get("/sources/isone_csv")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["id"] == "isone_csv"
+    assert data["status"] == "active"
+    assert data["data_format"] == "CSV"
+
+
 def test_fetch_source_returns_not_implemented_message():
     # epa_egrid has no connector yet — should return the "not implemented" stub
     res = client.post("/sources/epa_egrid/fetch")

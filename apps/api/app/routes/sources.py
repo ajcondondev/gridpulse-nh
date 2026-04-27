@@ -38,6 +38,15 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"EIA API error: {e}")
 
+    if source_id == "isone_csv":
+        from app.services.fetch_service import fetch_isone_csv
+        try:
+            return fetch_isone_csv()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"ISO-NE CSV error: {e}")
+
     if source_id == "noaa_weather":
         from app.services.fetch_service import fetch_noaa_weather
         try:

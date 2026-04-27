@@ -40,6 +40,10 @@ def _aggregate_demand_to_daily(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _load_latest_demand_dataset() -> tuple[Optional[pd.DataFrame], Optional[str]]:
+    df_isone = _load_latest_cleaned("isone_csv")
+    if df_isone is not None:
+        return df_isone, "isone_csv"
+
     df_eia = _load_latest_cleaned("eia_isone_load")
     if df_eia is not None:
         return df_eia, "eia_isone_load"
@@ -88,7 +92,7 @@ def create_weather_demand_join() -> Dataset:
     if df_demand is None or demand_source_id is None:
         raise ValueError(
             "No demand dataset found. "
-            "Fetch Mock Electricity Demand (or EIA ISO-NE Load) first."
+            "Fetch ISO-NE CSV, EIA ISO-NE Load, or Mock Electricity Demand first."
         )
 
     daily = _aggregate_demand_to_daily(df_demand)

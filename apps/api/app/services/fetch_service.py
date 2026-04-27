@@ -98,6 +98,46 @@ def fetch_eia_isone_load() -> Dataset:
     return dataset
 
 
+def fetch_isone_csv() -> Dataset:
+    from app.connectors.isone_csv_connector import ISONECSVConnector
+
+    connector = ISONECSVConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"isone_csv_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("isone_csv", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "ISO-NE CSV"),
+        ["timestamp", "region", "demand_mw", "source", "pulled_at"],
+        "ISO-NE CSV",
+    )
+
+    cleaned_p = storage_service.cleaned_path("isone_csv", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="isone_csv",
+        name=f"ISO-NE Hourly System Demand CSV - {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_noaa_weather() -> Dataset:
     from app.connectors.noaa_connector import NOAAConnector
 

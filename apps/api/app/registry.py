@@ -36,12 +36,13 @@ SOURCES: list[Source] = [
     Source(
         id="isone_csv",
         name="ISO-NE CSV Downloads",
-        description="Publicly available CSV data exports from ISO New England, including hourly demand, LMP pricing, and generation mix by fuel type.",
+        description="Public ISO New England CSV download support. Phase 10 starts with hourly real-time system demand via direct CSV export.",
         category=SourceCategory.electricity,
-        status=SourceStatus.planned,
-        url="https://www.iso-ne.com/isoexpress/web/reports/load-and-demand/-/tree/zone-info",
+        status=SourceStatus.active,
+        url="https://www.iso-ne.com/isoexpress/web/reports/load-and-demand/-/tree/dmnd-rt-hourly-sys",
         update_frequency="Daily",
         data_format="CSV",
+        notes="No API key required. Current implementation fetches the public Hourly Real-Time System Demand CSV.",
     ),
     Source(
         id="afdc_ev",

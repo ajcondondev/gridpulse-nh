@@ -23,9 +23,9 @@ All data sources are public. GridPulse NH does not use private utility data or i
 
 ### ISO-NE CSV Downloads
 - **ID:** `isone_csv`
-- **Status:** Planned
-- **URL:** https://www.iso-ne.com/isoexpress/web/reports/load-and-demand/-/tree/zone-info
-- **Description:** ISO New England publicly exports hourly load, LMP, and generation mix CSVs. No API key required.
+- **Status:** Active
+- **URL:** https://www.iso-ne.com/isoexpress/web/reports/load-and-demand/-/tree/dmnd-rt-hourly-sys
+- **Description:** ISO New England public CSV download support. The current implementation fetches Hourly Real-Time System Demand directly from ISO-NE with no API key required.
 - **Format:** CSV
 
 ---

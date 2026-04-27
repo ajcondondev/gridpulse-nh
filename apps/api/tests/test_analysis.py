@@ -103,6 +103,64 @@ def test_join_prefers_latest_eia_over_mock(monkeypatch, tmp_path):
     assert preview.json()["rows"][0]["demand_source"] == "EIA"
 
 
+def test_join_prefers_isone_csv_over_eia(monkeypatch, tmp_path):
+    _configure_temp_data(monkeypatch, tmp_path)
+    _write_dataset(
+        "eia_isone_load",
+        "eia_new",
+        datetime(2026, 4, 21, 12, 0, 0),
+        pd.DataFrame(
+            {
+                "timestamp": ["2026-04-21T00:00:00"],
+                "region": ["ISO New England"],
+                "demand_mw": [12000],
+                "source": ["EIA"],
+                "pulled_at": ["2026-04-21T12:00:00"],
+            }
+        ),
+    )
+    _write_dataset(
+        "isone_csv",
+        "isone_new",
+        datetime(2026, 4, 21, 12, 30, 0),
+        pd.DataFrame(
+            {
+                "timestamp": ["2026-04-21T00:00:00"],
+                "region": ["ISO-NE"],
+                "demand_mw": [12500],
+                "source": ["ISO-NE CSV"],
+                "pulled_at": ["2026-04-21T12:30:00"],
+            }
+        ),
+    )
+    _write_dataset(
+        "noaa_weather",
+        "noaa_new",
+        datetime(2026, 4, 21, 13, 0, 0),
+        pd.DataFrame(
+            {
+                "date": ["2026-04-21"],
+                "station": ["GHCND:USW00014745"],
+                "temp_avg_f": [58.0],
+                "temp_min_f": [48.0],
+                "temp_max_f": [68.0],
+                "hdd": [7.0],
+                "cdd": [0.0],
+                "source": ["NOAA GHCND"],
+                "pulled_at": ["2026-04-21T13:00:00"],
+            }
+        ),
+    )
+
+    join_res = client.post("/analysis/weather-demand/join")
+    assert join_res.status_code == 200
+
+    join_id = join_res.json()["id"]
+    preview = client.get(f"/datasets/{join_id}/preview")
+    assert preview.status_code == 200
+    assert preview.json()["rows"][0]["demand_source"] == "ISO-NE CSV"
+
+
 def test_live_join_requires_noaa_when_using_eia(monkeypatch, tmp_path):
     _configure_temp_data(monkeypatch, tmp_path)
     _write_dataset(
