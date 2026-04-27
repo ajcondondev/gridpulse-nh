@@ -246,6 +246,34 @@ def test_registry_validation_warns_on_mock_with_wrong_status():
     assert any("is_mock_data=True" in w for w in warnings)
 
 
+def test_isone_fuel_mix_is_active():
+    res = client.get("/sources/isone_fuel_mix")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "active"
+    assert data["requires_api_key"] is False
+    assert data["connector_implemented"] is True
+    assert data["data_format"] == "CSV"
+
+
+def test_isone_load_forecast_is_active():
+    res = client.get("/sources/isone_load_forecast")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "active"
+    assert data["requires_api_key"] is False
+    assert data["connector_implemented"] is True
+    assert data["data_format"] == "CSV"
+
+
+def test_isone_lmp_is_research():
+    res = client.get("/sources/isone_lmp")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "research"
+    assert data["connector_implemented"] is False
+
+
 def test_source_catalog_docs_exist():
     import pathlib
     docs = pathlib.Path(__file__).parent.parent.parent.parent / "docs"

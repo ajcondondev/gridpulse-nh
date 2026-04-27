@@ -432,6 +432,86 @@ def fetch_nh_geodata() -> Dataset:
     return dataset
 
 
+def fetch_isone_fuel_mix() -> Dataset:
+    from app.connectors.isone_fuel_mix_connector import ISONEFuelMixConnector
+
+    connector = ISONEFuelMixConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"isone_fuel_mix_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("isone_fuel_mix", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "ISO-NE Fuel Mix"),
+        ["timestamp", "date", "hour_ending", "fuel_type", "value", "unit", "source", "pulled_at"],
+        "ISO-NE Fuel Mix",
+    )
+
+    cleaned_p = storage_service.cleaned_path("isone_fuel_mix", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="isone_fuel_mix",
+        name=f"ISO-NE Generation Fuel Mix — {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_isone_load_forecast() -> Dataset:
+    from app.connectors.isone_load_forecast_connector import ISONELoadForecastConnector
+
+    connector = ISONELoadForecastConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"isone_load_forecast_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("isone_load_forecast", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "ISO-NE Load Forecast"),
+        ["timestamp", "date", "hour_ending", "load_forecast_mw", "source", "pulled_at"],
+        "ISO-NE Load Forecast",
+    )
+
+    cleaned_p = storage_service.cleaned_path("isone_load_forecast", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="isone_load_forecast",
+        name=f"ISO-NE Hourly Load Forecast — {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_afdc_ev() -> Dataset:
     from app.connectors.afdc_connector import AFDCConnector
 

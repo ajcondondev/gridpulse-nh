@@ -61,6 +61,8 @@ export function SourceDetailPage() {
     'mock_demand',
     'eia_isone_load',
     'isone_csv',
+    'isone_fuel_mix',
+    'isone_load_forecast',
     'noaa_weather',
     'afdc_ev',
     'openei_rates',

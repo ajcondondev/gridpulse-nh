@@ -111,6 +111,24 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"NH Geodata error: {e}")
 
+    if source_id == "isone_fuel_mix":
+        from app.services.fetch_service import fetch_isone_fuel_mix
+        try:
+            return fetch_isone_fuel_mix()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"ISO-NE fuel mix error: {e}")
+
+    if source_id == "isone_load_forecast":
+        from app.services.fetch_service import fetch_isone_load_forecast
+        try:
+            return fetch_isone_load_forecast()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"ISO-NE load forecast error: {e}")
+
     return {
         "message": "Fetch not yet implemented for this source.",
         "source_id": source_id,
