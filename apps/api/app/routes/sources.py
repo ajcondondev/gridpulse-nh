@@ -111,6 +111,24 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"NH Geodata error: {e}")
 
+    if source_id == "nrel_pvwatts":
+        from app.services.fetch_service import fetch_nrel_pvwatts
+        try:
+            return fetch_nrel_pvwatts()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"NREL PVWatts error: {e}")
+
+    if source_id == "eia_retail_prices":
+        from app.services.fetch_service import fetch_eia_retail_prices
+        try:
+            return fetch_eia_retail_prices()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"EIA retail prices error: {e}")
+
     if source_id == "isone_fuel_mix":
         from app.services.fetch_service import fetch_isone_fuel_mix
         try:

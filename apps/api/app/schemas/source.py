@@ -18,6 +18,7 @@ class SourceCategory(str, Enum):
     electricity = "electricity"
     weather = "weather"
     ev = "ev"
+    solar = "solar"
     environmental = "environmental"
     resilience = "resilience"
     gis = "gis"

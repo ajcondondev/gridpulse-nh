@@ -11,6 +11,7 @@ export type SourceCategory =
   | 'electricity'
   | 'weather'
   | 'ev'
+  | 'solar'
   | 'environmental'
   | 'resilience'
   | 'gis'

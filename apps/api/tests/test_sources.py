@@ -246,6 +246,26 @@ def test_registry_validation_warns_on_mock_with_wrong_status():
     assert any("is_mock_data=True" in w for w in warnings)
 
 
+def test_nrel_pvwatts_is_active():
+    res = client.get("/sources/nrel_pvwatts")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "active"
+    assert data["requires_api_key"] is False
+    assert data["connector_implemented"] is True
+    assert data["category"] == "solar"
+
+
+def test_eia_retail_prices_requires_key():
+    res = client.get("/sources/eia_retail_prices")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "requires_key"
+    assert data["requires_api_key"] is True
+    assert data["api_key_env_var"] == "EIA_API_KEY"
+    assert data["connector_implemented"] is True
+
+
 def test_isone_fuel_mix_is_active():
     res = client.get("/sources/isone_fuel_mix")
     assert res.status_code == 200

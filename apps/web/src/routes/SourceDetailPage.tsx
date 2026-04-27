@@ -60,6 +60,8 @@ export function SourceDetailPage() {
   const FETCHABLE_IDS = new Set([
     'mock_demand',
     'eia_isone_load',
+    'eia_retail_prices',
+    'nrel_pvwatts',
     'isone_csv',
     'isone_fuel_mix',
     'isone_load_forecast',

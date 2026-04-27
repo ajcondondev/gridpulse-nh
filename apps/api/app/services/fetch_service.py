@@ -432,6 +432,92 @@ def fetch_nh_geodata() -> Dataset:
     return dataset
 
 
+def fetch_nrel_pvwatts() -> Dataset:
+    from app.connectors.nrel_pvwatts_connector import NRELPVWattsConnector
+
+    connector = NRELPVWattsConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"nrel_pvwatts_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("nrel_pvwatts", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "location_name", "latitude", "longitude",
+        "month", "month_name",
+        "ac_kwh", "solar_radiation_kwh_m2_day",
+        "system_capacity_kw", "source", "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "NREL PVWatts"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "NREL PVWatts",
+    )
+
+    cleaned_p = storage_service.cleaned_path("nrel_pvwatts", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="nrel_pvwatts",
+        name=f"NREL PVWatts NH Solar Estimates — {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_eia_retail_prices() -> Dataset:
+    from app.connectors.eia_retail_prices_connector import EIARetailPricesConnector
+
+    connector = EIARetailPricesConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"eia_retail_prices_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("eia_retail_prices", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "EIA Retail Prices"),
+        ["period", "state", "sector_id", "sector_name", "price_cents_per_kwh", "source", "pulled_at"],
+        "EIA Retail Prices",
+    )
+
+    cleaned_p = storage_service.cleaned_path("eia_retail_prices", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="eia_retail_prices",
+        name=f"EIA NH Retail Electricity Prices — {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_isone_fuel_mix() -> Dataset:
     from app.connectors.isone_fuel_mix_connector import ISONEFuelMixConnector
 
