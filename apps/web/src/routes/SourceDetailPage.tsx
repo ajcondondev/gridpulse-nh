@@ -6,14 +6,14 @@ import { fetchSource, getSource } from '../services/sourcesApi'
 import type { Dataset } from '../types/dataset'
 import type { Source } from '../types/source'
 
-const ACCESS_METHOD_LABELS: Record<string, string> = {
-  api: 'Live API (JSON)',
+const ACCESS_TYPE_LABELS: Record<string, string> = {
+  public_api_no_key: 'Public API — no key required',
+  public_api_key_required: 'Public API — key required',
+  public_csv: 'Public CSV download',
+  public_web_scrape: 'Public web scrape',
   arcgis_rest: 'ArcGIS REST API',
-  csv_download: 'CSV Download',
-  web_scrape: 'Web Scrape (HTML)',
-  pdf: 'PDF / Document',
-  manual: 'Manual Import',
-  generated: 'Generated (synthetic)',
+  manual_download: 'Manual download',
+  test_fixture_only: 'Test fixture (synthetic)',
 }
 
 type FetchState =
@@ -127,10 +127,10 @@ export function SourceDetailPage() {
               </dd>
             </div>
           )}
-          {source.access_method && (
+          {source.access_type && (
             <div>
               <dt className="text-xs font-medium text-gray-500">Access Method</dt>
-              <dd className="mt-0.5 text-gray-900">{ACCESS_METHOD_LABELS[source.access_method] ?? source.access_method}</dd>
+              <dd className="mt-0.5 text-gray-900">{ACCESS_TYPE_LABELS[source.access_type] ?? source.access_type}</dd>
             </div>
           )}
           {source.requires_api_key != null && (
@@ -188,13 +188,13 @@ export function SourceDetailPage() {
           </p>
         )}
 
-        {fetchState.status === 'idle' && canFetch && source.status === 'mock' && (
+        {fetchState.status === 'idle' && canFetch && source.is_mock_data && (
           <p className="mt-2 text-xs text-gray-400">
-            Generates synthetic mock data. Clearly labeled — not real utility data.
+            Generates synthetic data for testing. Not real utility data.
           </p>
         )}
 
-        {fetchState.status === 'idle' && canFetch && source.status !== 'mock' && !noKeyRequired && (
+        {fetchState.status === 'idle' && canFetch && !source.is_mock_data && !noKeyRequired && (
           <p className="mt-2 text-xs text-gray-400">
             Requires an API key configured in the backend .env file. See README for setup.
           </p>

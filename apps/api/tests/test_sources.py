@@ -42,7 +42,9 @@ def test_get_source_mock_demand():
     assert res.status_code == 200
     data = res.json()
     assert data["id"] == "mock_demand"
-    assert data["status"] == "mock"
+    assert data["status"] == "test_fixture_only"
+    assert data["is_mock_data"] is True
+    assert data["is_real_data"] is False
     assert data["category"] == "electricity"
 
 
@@ -91,7 +93,7 @@ def test_fetch_source_unknown_returns_404():
 
 # ── Phase 14: status model and metadata accuracy ────────────────────────────
 
-VALID_STATUSES = {"active", "requires_key", "manual_import", "planned", "research", "not_implemented", "mock"}
+VALID_STATUSES = {"active", "requires_key", "manual_import", "planned", "research", "not_implemented", "test_fixture_only"}
 
 
 def test_all_source_statuses_are_valid():
@@ -139,10 +141,10 @@ def test_source_detail_includes_phase_added():
     assert data["phase_added"] == 12
 
 
-def test_source_detail_includes_access_method():
+def test_source_detail_includes_access_type():
     res = client.get("/sources/fema_flood")
     data = res.json()
-    assert data["access_method"] == "arcgis_rest"
+    assert data["access_type"] == "arcgis_rest"
 
 
 def test_not_implemented_sources_have_correct_status():
@@ -159,6 +161,89 @@ def test_manchester_gis_is_research():
     res = client.get("/sources/manchester_gis")
     assert res.status_code == 200
     assert res.json()["status"] == "research"
+
+
+def test_active_sources_have_connector_implemented():
+    res = client.get("/sources")
+    for source in res.json()["sources"]:
+        if source["status"] == "active":
+            assert source.get("connector_implemented") is True, (
+                f"Active source '{source['id']}' has connector_implemented=False"
+            )
+
+
+def test_requires_key_sources_have_api_key_env_var():
+    for source_id in ["eia_isone_load", "noaa_weather"]:
+        res = client.get(f"/sources/{source_id}")
+        data = res.json()
+        assert data.get("api_key_env_var"), (
+            f"Source '{source_id}' requires a key but api_key_env_var is not set"
+        )
+
+
+def test_registry_validation_no_active_without_connector():
+    from app.config import settings
+    from app.registry import SOURCES
+    from app.registry_validation import validate_registry
+    warnings = validate_registry(SOURCES, settings)
+    active_connector_warnings = [
+        w for w in warnings if "active" in w and "connector_implemented=False" in w
+    ]
+    assert not active_connector_warnings, (
+        f"Registry has active sources without connectors: {active_connector_warnings}"
+    )
+
+
+def test_registry_validation_no_mock_in_wrong_status():
+    from app.config import settings
+    from app.registry import SOURCES
+    from app.registry_validation import validate_registry
+    warnings = validate_registry(SOURCES, settings)
+    mock_status_warnings = [w for w in warnings if "is_mock_data=True" in w]
+    assert not mock_status_warnings, (
+        f"Registry has mock sources with incorrect status: {mock_status_warnings}"
+    )
+
+
+def test_registry_validation_warns_on_active_without_connector():
+    from app.schemas.source import Source, SourceCategory, SourceStatus
+    from app.registry_validation import validate_registry
+
+    bad_source = Source(
+        id="fake_broken",
+        name="Broken",
+        description="Test",
+        category=SourceCategory.electricity,
+        status=SourceStatus.active,
+        connector_implemented=False,
+    )
+
+    class _FakeSettings:
+        pass
+
+    warnings = validate_registry([bad_source], _FakeSettings())
+    assert any("connector_implemented=False" in w for w in warnings)
+
+
+def test_registry_validation_warns_on_mock_with_wrong_status():
+    from app.schemas.source import Source, SourceCategory, SourceStatus
+    from app.registry_validation import validate_registry
+
+    bad_source = Source(
+        id="sneaky_mock",
+        name="Sneaky",
+        description="Test",
+        category=SourceCategory.electricity,
+        status=SourceStatus.active,
+        is_mock_data=True,
+        connector_implemented=True,
+    )
+
+    class _FakeSettings:
+        pass
+
+    warnings = validate_registry([bad_source], _FakeSettings())
+    assert any("is_mock_data=True" in w for w in warnings)
 
 
 def test_source_catalog_docs_exist():

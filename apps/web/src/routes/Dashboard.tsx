@@ -18,7 +18,7 @@ export function Dashboard() {
   }, [])
 
   const total = sources.length
-  const available = sources.filter((s) => s.status === 'active' || s.status === 'mock').length
+  const available = sources.filter((s) => s.status === 'active').length
   const planned = sources.filter((s) => s.status === 'planned').length
 
   return (

@@ -5,7 +5,7 @@ export type SourceStatus =
   | 'planned'
   | 'research'
   | 'not_implemented'
-  | 'mock'
+  | 'test_fixture_only'
 
 export type SourceCategory =
   | 'electricity'
@@ -27,9 +27,11 @@ export interface Source {
   data_format?: string
   notes?: string
   requires_api_key?: boolean
+  api_key_env_var?: string
   auth_type?: string
-  access_method?: string
+  access_type?: string
   data_geography?: string
+  connector_implemented?: boolean
   phase_added?: number
   last_verified?: string
   is_real_data?: boolean

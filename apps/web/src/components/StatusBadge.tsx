@@ -6,10 +6,10 @@ const statusConfig: Record<SourceStatus, { label: string; classes: string; title
     classes: 'bg-emerald-100 text-emerald-800',
     title: 'Live data — works now with no special setup',
   },
-  mock: {
-    label: 'Mock',
+  test_fixture_only: {
+    label: 'Test Only',
     classes: 'bg-blue-100 text-blue-800',
-    title: 'Generates synthetic data for testing — not real utility data',
+    title: 'Synthetic data — for automated tests and local dev only, not shown in production',
   },
   requires_key: {
     label: 'Requires Key',

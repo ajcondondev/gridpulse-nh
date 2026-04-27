@@ -10,6 +10,10 @@ from app.services.storage_service import ensure_dirs
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_dirs()
+    from app.config import settings
+    from app.registry import SOURCES
+    from app.registry_validation import log_registry_warnings
+    log_registry_warnings(SOURCES, settings)
     yield
 
 

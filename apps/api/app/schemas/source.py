@@ -11,7 +11,7 @@ class SourceStatus(str, Enum):
     planned = "planned"
     research = "research"
     not_implemented = "not_implemented"
-    mock = "mock"
+    test_fixture_only = "test_fixture_only"
 
 
 class SourceCategory(str, Enum):
@@ -35,13 +35,15 @@ class Source(BaseModel):
     data_format: Optional[str] = None
     notes: Optional[str] = None
     requires_api_key: Optional[bool] = None
+    api_key_env_var: Optional[str] = None
     auth_type: Optional[str] = None
-    access_method: Optional[str] = None
+    access_type: Optional[str] = None
     data_geography: Optional[str] = None
     phase_added: Optional[int] = None
     last_verified: Optional[str] = None
     is_real_data: bool = True
     is_mock_data: bool = False
+    connector_implemented: bool = False
 
 
 class SourceList(BaseModel):
