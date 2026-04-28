@@ -16,6 +16,7 @@ class SourceStatus(str, Enum):
 
 class SourceCategory(str, Enum):
     electricity = "electricity"
+    gas = "gas"
     weather = "weather"
     ev = "ev"
     solar = "solar"

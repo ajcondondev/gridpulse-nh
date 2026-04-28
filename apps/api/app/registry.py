@@ -146,6 +146,31 @@ SOURCES: list[Source] = [
     ),
 
     Source(
+        id="eia_ami",
+        name="EIA AMI Smart Meter Deployment",
+        description="Advanced metering infrastructure (AMI/smart meter) deployment by NH utility — annual counts of total customers, AMI customers, and penetration rate from EIA Form 861.",
+        category=SourceCategory.electricity,
+        status=SourceStatus.active,
+        url="https://www.eia.gov/electricity/data/eia861/",
+        update_frequency="Annual",
+        data_format="Excel (ZIP)",
+        notes=(
+            "No API key required. Downloads the EIA Form 861 annual ZIP and extracts "
+            "the Advanced_Meters Excel file. Tries survey years 2024 → 2023 → 2022 in order. "
+            "Requires openpyxl. Column names are verified via keyword matching and may need "
+            "adjustment if EIA changes the spreadsheet layout in future releases."
+        ),
+        requires_api_key=False,
+        auth_type="none",
+        access_type="public_zip_excel",
+        data_geography="nh",
+        phase_added=15,
+        last_verified="2026-04-27",
+        is_real_data=True,
+        is_mock_data=False,
+        connector_implemented=True,
+    ),
+    Source(
         id="nrel_pvwatts",
         name="NREL PVWatts Solar Estimates",
         description="Monthly solar PV output estimates for key NH locations (Manchester, Concord, Portsmouth, Keene) — 4 kW residential reference system. From NREL PVWatts v8.",
@@ -208,6 +233,35 @@ SOURCES: list[Source] = [
     ),
 
     # ── Requires API key ─────────────────────────────────────────────────────
+    Source(
+        id="eia_ng_prices",
+        name="EIA Natural Gas Retail Prices",
+        description=(
+            "Monthly retail natural gas prices for New Hampshire by sector "
+            "(residential, commercial, industrial) in $/MCF — from the EIA v2 API. "
+            "Natural gas is the dominant ISO-NE generation fuel and the primary driver "
+            "of NH electricity price volatility."
+        ),
+        category=SourceCategory.gas,
+        status=SourceStatus.requires_key,
+        url="https://api.eia.gov/v2/natural-gas/pri/sum/data/",
+        update_frequency="Monthly",
+        data_format="JSON",
+        notes=(
+            "Requires EIA_API_KEY in .env — same key as EIA Retail Electricity Prices "
+            "and EIA ISO-NE Hourly Load. Free registration at eia.gov/opendata. "
+            "Returns 5 years of monthly NH retail NG prices in $/MCF by sector."
+        ),
+        requires_api_key=True,
+        api_key_env_var="EIA_API_KEY",
+        auth_type="api_key",
+        access_type="public_api_key_required",
+        data_geography="nh",
+        phase_added=17,
+        is_real_data=True,
+        is_mock_data=False,
+        connector_implemented=True,
+    ),
     Source(
         id="eia_retail_prices",
         name="EIA Retail Electricity Prices",
@@ -273,20 +327,27 @@ SOURCES: list[Source] = [
     Source(
         id="isone_lmp",
         name="ISO-NE Wholesale LMP Prices",
-        description="ISO New England locational marginal prices (LMP) — wholesale electricity prices at hubs and zones. Public data, endpoint under evaluation.",
+        description="ISO New England real-time hourly locational marginal prices (LMP) for all load zones and hubs — total, energy, congestion, and loss components. Public transform/csv export.",
         category=SourceCategory.electricity,
-        status=SourceStatus.research,
+        status=SourceStatus.active,
         url="https://www.iso-ne.com/isoexpress/web/reports/pricing/-/tree/zone-info",
         update_frequency="Hourly",
         data_format="CSV",
-        notes="ISO-NE publishes hourly LMP data via the transform/csv API. Connector endpoint parameters are being verified before promotion to active.",
+        notes=(
+            "No API key required. Fetches 7 days of hourly LMP from the ISO-NE public "
+            "transform/csv endpoint. Returns all zones in long format; NH zone is identified "
+            "as '.Z.NEWHAMPSHIRE'. Endpoint URL and column names need live verification — "
+            "see connector TODO."
+        ),
         requires_api_key=False,
+        auth_type="none",
         access_type="public_csv",
         data_geography="iso_ne",
-        phase_added=13,
+        phase_added=15,
+        last_verified="2026-04-28",
         is_real_data=True,
         is_mock_data=False,
-        connector_implemented=False,
+        connector_implemented=True,
     ),
     Source(
         id="manchester_gis",
@@ -311,20 +372,32 @@ SOURCES: list[Source] = [
     Source(
         id="epa_ejscreen",
         name="EPA EJScreen",
-        description="Environmental justice screening and mapping data for New Hampshire census tracts — pollution burden and demographic indicators.",
+        description=(
+            "EPA EJScreen 2023 block-group environmental justice indicators for New Hampshire — "
+            "pollution burden percentiles (PM2.5, diesel, cancer risk, traffic) and demographic "
+            "indicators (low income, people of color, linguistic isolation). Complements CDC SVI "
+            "for equity-aware utility planning."
+        ),
         category=SourceCategory.environmental,
-        status=SourceStatus.not_implemented,
+        status=SourceStatus.active,
         url="https://ejscreen.epa.gov/mapper/",
         update_frequency="Annual",
-        data_format="CSV",
-        notes="Connector not yet implemented. CSV downloads are available from EPA's EJScreen data download page.",
+        data_format="JSON",
+        notes=(
+            "No API key required. Queries the EPA EJScreen 2023 ArcGIS Feature Service "
+            "(ArcGIS Online) for all NH block groups, filtered by bounding box and state code. "
+            "Returns ~1,270 block groups with 20 EJ indicator percentiles. "
+            "ArcGIS service URL subject to change on annual data releases — see connector TODO."
+        ),
         requires_api_key=False,
-        access_type="public_csv",
+        auth_type="none",
+        access_type="arcgis_rest",
         data_geography="nh",
-        phase_added=1,
+        phase_added=16,
+        last_verified="2026-04-28",
         is_real_data=True,
         is_mock_data=False,
-        connector_implemented=False,
+        connector_implemented=True,
     ),
     Source(
         id="nhsaves",

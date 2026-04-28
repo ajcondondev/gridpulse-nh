@@ -147,6 +147,42 @@ def fetch_source(source_id: str):
         except Exception as e:
             raise HTTPException(status_code=502, detail=f"ISO-NE load forecast error: {e}")
 
+    if source_id == "eia_ng_prices":
+        from app.services.fetch_service import fetch_eia_ng_prices
+        try:
+            return fetch_eia_ng_prices()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"EIA natural gas prices error: {e}")
+
+    if source_id == "epa_ejscreen":
+        from app.services.fetch_service import fetch_epa_ejscreen
+        try:
+            return fetch_epa_ejscreen()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"EPA EJScreen error: {e}")
+
+    if source_id == "isone_lmp":
+        from app.services.fetch_service import fetch_isone_lmp
+        try:
+            return fetch_isone_lmp()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"ISO-NE LMP error: {e}")
+
+    if source_id == "eia_ami":
+        from app.services.fetch_service import fetch_eia_ami
+        try:
+            return fetch_eia_ami()
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"EIA AMI error: {e}")
+
     return {
         "message": "Fetch not yet implemented for this source.",
         "source_id": source_id,

@@ -79,7 +79,8 @@ def test_get_source_epa_egrid_is_active():
 
 
 def test_fetch_source_returns_not_implemented_message():
-    res = client.post("/sources/epa_ejscreen/fetch")
+    # nhsaves has no connector — should return the generic fallback message
+    res = client.post("/sources/nhsaves/fetch")
     assert res.status_code == 200
     data = res.json()
     assert "message" in data
@@ -148,7 +149,7 @@ def test_source_detail_includes_access_type():
 
 
 def test_not_implemented_sources_have_correct_status():
-    not_implemented_ids = ["epa_ejscreen", "nhsaves", "nh_puc", "eversource_sustainability"]
+    not_implemented_ids = ["nhsaves", "nh_puc", "eversource_sustainability"]
     for source_id in not_implemented_ids:
         res = client.get(f"/sources/{source_id}")
         assert res.status_code == 200
@@ -286,12 +287,14 @@ def test_isone_load_forecast_is_active():
     assert data["data_format"] == "CSV"
 
 
-def test_isone_lmp_is_research():
+def test_isone_lmp_is_active():
     res = client.get("/sources/isone_lmp")
     assert res.status_code == 200
     data = res.json()
-    assert data["status"] == "research"
-    assert data["connector_implemented"] is False
+    assert data["status"] == "active"
+    assert data["connector_implemented"] is True
+    assert data["requires_api_key"] is False
+    assert data["data_format"] == "CSV"
 
 
 def test_source_catalog_docs_exist():

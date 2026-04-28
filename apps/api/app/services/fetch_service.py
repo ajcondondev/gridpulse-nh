@@ -598,6 +598,200 @@ def fetch_isone_load_forecast() -> Dataset:
     return dataset
 
 
+def fetch_eia_ng_prices() -> Dataset:
+    from app.connectors.eia_ng_prices_connector import EIANGPricesConnector
+
+    connector = EIANGPricesConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"eia_ng_prices_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("eia_ng_prices", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "period", "state", "sector", "series_id",
+        "price_per_mcf", "price_units", "source", "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "EIA Natural Gas Prices"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "EIA Natural Gas Prices",
+    )
+
+    cleaned_p = storage_service.cleaned_path("eia_ng_prices", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="eia_ng_prices",
+        name=f"EIA NH Natural Gas Retail Prices — {fetched_at.strftime('%Y-%m-%d')}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_epa_ejscreen() -> Dataset:
+    from app.connectors.ejscreen_connector import EJScreenConnector
+
+    connector = EJScreenConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"epa_ejscreen_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("epa_ejscreen", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["fetched_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "block_group_fips", "state", "county", "population",
+        "pm25_pctile", "ozone_pctile", "diesel_pm_pctile",
+        "cancer_risk_pctile", "resp_hazard_pctile",
+        "traffic_pctile", "lead_paint_pctile",
+        "superfund_pctile", "rmp_facility_pctile", "tsd_facility_pctile",
+        "storage_tanks_pctile", "wastewater_pctile",
+        "people_of_color_pct", "low_income_pct",
+        "linguistic_isolation_pct", "unemployment_pct",
+        "under_5_pct", "over_64_pct",
+        "source", "data_year", "fetched_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "EPA EJScreen"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "EPA EJScreen",
+    )
+
+    cleaned_p = storage_service.cleaned_path("epa_ejscreen", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    exceeded = result.get("exceeded_transfer_limit", False)
+    name = f"EPA EJScreen NH Block Groups — 2023"
+    if exceeded:
+        name += " (first 2000 records)"
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="epa_ejscreen",
+        name=name,
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_isone_lmp() -> Dataset:
+    from app.connectors.isone_lmp_connector import ISONELMPConnector
+
+    connector = ISONELMPConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+
+    dataset_id = f"isone_lmp_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("isone_lmp", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "timestamp", "date", "hour_ending",
+        "zone_id", "zone_name",
+        "lmp_per_mwh", "energy_component", "congestion_component", "loss_component",
+        "source", "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "ISO-NE LMP"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "ISO-NE LMP",
+    )
+
+    cleaned_p = storage_service.cleaned_path("isone_lmp", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="isone_lmp",
+        name=f"ISO-NE Zone LMP — {fetched_at.strftime('%Y-%m-%d %H:%M')} UTC",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
+def fetch_eia_ami() -> Dataset:
+    from app.connectors.eia_ami_connector import EIAAMIConnector
+
+    connector = EIAAMIConnector()
+    result = connector.fetch()
+    df_raw = result["dataframe"]
+    fetched_at = result["fetched_at"]
+    data_year = result.get("data_year", "unknown")
+
+    dataset_id = f"eia_ami_{fetched_at.strftime('%Y%m%d_%H%M%S')}"
+    filename = f"{dataset_id}.csv"
+
+    raw_p = storage_service.raw_path("eia_ami", filename)
+    df_raw.to_csv(raw_p, index=False)
+
+    df_clean = connector.clean(raw_p)
+    df_clean["pulled_at"] = fetched_at.isoformat()
+    ordered_cols = [
+        "utility_name", "state", "data_year",
+        "ownership", "service_type",
+        "total_customers", "ami_customers", "ami_pct",
+        "source", "pulled_at",
+    ]
+    df_clean = _require_columns(
+        _require_non_empty(df_clean, "EIA AMI"),
+        [c for c in ordered_cols if c in df_clean.columns],
+        "EIA AMI",
+    )
+
+    cleaned_p = storage_service.cleaned_path("eia_ami", filename)
+    df_clean.to_csv(cleaned_p, index=False)
+
+    dataset = Dataset(
+        id=dataset_id,
+        source_id="eia_ami",
+        name=f"EIA 861 AMI Smart Meters NH — {data_year}",
+        fetched_at=fetched_at,
+        row_count=len(df_clean),
+        columns=list(df_clean.columns),
+        raw_path=str(raw_p),
+        cleaned_path=str(cleaned_p),
+        status="ready",
+    )
+    dataset_service.save_dataset(dataset)
+    return dataset
+
+
 def fetch_afdc_ev() -> Dataset:
     from app.connectors.afdc_connector import AFDCConnector
 
