@@ -66,42 +66,92 @@ The app supports live public connectors for electricity demand, fuel mix, wholes
 
 ## Getting Started
 
+You need two terminals running simultaneously — one for the API, one for the web app.
+
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 20+
 
-### Backend
+---
+
+### Terminal 1 — API (FastAPI)
 
 ```bash
+# From the repo root:
 cd apps/api
+
+# Create and activate a virtual environment
 python -m venv .venv
 
-# Windows
+# Windows:
 .venv\Scripts\activate
-
-# macOS / Linux
+# macOS / Linux:
 source .venv/bin/activate
 
+# Install dependencies
 pip install -r requirements.txt
+
+# Create your .env (API keys are optional to start — see below)
 cp .env.example .env
+
+# Start the API server
 uvicorn app.main:app --reload
 ```
 
-### Frontend
+You should see:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+```
+
+**Verify it's working:** open `http://localhost:8000/health` — you should get `{"status":"ok"}`.
+
+---
+
+### Terminal 2 — Web App (React + Vite)
+
+Open a **new terminal** (keep Terminal 1 running):
 
 ```bash
+# From the repo root:
 cd apps/web
+
 npm install
 cp .env.example .env.local
 npm run dev
 ```
 
+You should see:
+
+```
+  VITE v5.x.x  ready in xxx ms
+  ➜  Local:   http://localhost:5173/
+```
+
+Open `http://localhost:5173` in your browser.
+
+---
+
+### URLs at a glance
+
 | Service | URL |
 |---|---|
-| API | `http://localhost:8000` |
-| Interactive API docs | `http://localhost:8000/docs` |
 | Web app | `http://localhost:5173` |
+| API | `http://localhost:8000` |
+| Interactive API docs (Swagger) | `http://localhost:8000/docs` |
+
+---
+
+### Your first fetch (no API key needed)
+
+1. Open the web app at `http://localhost:5173`
+2. Click **Sources** in the nav
+3. Click **ISO-NE CSV Downloads** → **Fetch Latest**
+4. Click **Datasets** in the nav — the fetched data appears there
+5. Click the dataset → **Preview** to see the cleaned rows, or **Download CSV**
+
+All 13 sources in the [no-key table below](#no-api-key-required) work the same way.
 
 ### Try It Without Any API Key
 
