@@ -44,9 +44,6 @@ Thumbs.db
 playwright-report/
 test-results/
 
-# Docs — kept local for now; not published to public repo
-docs/
-
 # AI / prompt / planning files — not for public repos
 CLAUDE.md
 .claude/

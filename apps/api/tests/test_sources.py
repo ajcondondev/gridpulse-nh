@@ -301,6 +301,4 @@ def test_source_catalog_docs_exist():
     import pathlib
     docs = pathlib.Path(__file__).parent.parent.parent.parent / "docs"
     assert (docs / "source_catalog.md").exists()
-    assert (docs / "source_roadmap.md").exists()
-    assert (docs / "progress_tracker.md").exists()
     assert (docs / "data_source_disclaimers.md").exists()
