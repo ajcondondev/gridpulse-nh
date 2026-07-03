@@ -21,13 +21,16 @@ dist/
 .env.*.local
 *.tsbuildinfo
 
-# Data (keep dirs, ignore content)
+# Data (keep dirs, ignore content — data/processed IS committed: it is the
+# small app-ready contract consumed by the web app and video renderer)
 data/raw/*
 data/cleaned/*
+data/interim/*
 data/exports/*
 data/metadata/*
 !data/raw/.gitkeep
 !data/cleaned/.gitkeep
+!data/interim/.gitkeep
 !data/exports/.gitkeep
 !data/metadata/.gitkeep
 
