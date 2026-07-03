@@ -55,3 +55,6 @@ reference/
 *prompt*.md
 apps/api/.tmp_pytest/
 data/test_tmp/
+
+# Local planning folder - never commit
+.local-plan/
