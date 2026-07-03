@@ -11,7 +11,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![pandas](https://img.shields.io/badge/pandas-2-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![Tests](https://img.shields.io/badge/tests-188_passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#testing)
-[![License](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](#license)
 
 **[Getting Started](#getting-started) · [API Reference](#api-reference) · [Data Sources](#data-sources) · [API Keys](#api-keys)**
 
@@ -21,9 +21,9 @@
 
 ## Overview
 
-GridPulse NH is a full-stack utility data engineering workbench focused on New Hampshire and ISO New England. The backend uses a connector-per-source pattern — each connector implements `fetch()` and `clean()` — and stores raw and cleaned files separately with dataset metadata so every fetch can be previewed or downloaded without re-running the source request.
+GridPulse NH is a full-stack utility data workbench focused on New Hampshire and ISO New England. The backend uses a connector-per-source pattern (each connector implements `fetch()` and `clean()`) and stores raw and cleaned files separately with dataset metadata, so every fetch can be previewed or downloaded without re-running the source request.
 
-The app supports live public connectors for electricity demand, fuel mix, wholesale prices, solar estimates, smart meter deployment, natural gas prices, weather, EV charging, utility rates, emissions, environmental justice, flood zones, social vulnerability, and municipal geography, alongside a synthetic demand generator and a weather × demand analysis workflow.
+The app has live public connectors for electricity demand, fuel mix, wholesale prices, solar estimates, smart meter deployment, natural gas prices, weather, EV charging, utility rates, emissions, environmental justice, flood zones, social vulnerability, and municipal geography, plus a synthetic demand generator for pipeline testing and a weather and demand analysis workflow.
 
 > **Disclaimer:** All data comes from publicly available APIs and government datasets. Not official Eversource software. Not affiliated with ISO New England or any utility.
 
@@ -32,7 +32,7 @@ The app supports live public connectors for electricity demand, fuel mix, wholes
 ## Features
 
 - **22-source catalog** spanning electricity, gas, weather, EV, solar, environmental, resilience, GIS, and regulatory categories
-- **18 implemented connectors** — 13 require no API key at all:
+- **18 implemented connectors**, 13 of which need no API key:
   - ISO-NE public hourly system demand CSV
   - ISO-NE hourly generation fuel mix (natural gas, nuclear, hydro, solar, wind, and more)
   - ISO-NE 7-day hourly load forecast
@@ -45,11 +45,11 @@ The app supports live public connectors for electricity demand, fuel mix, wholes
   - EIA Form 861 AMI smart meter deployment (NH utilities, ZIP/Excel)
   - FEMA National Flood Hazard Layer (NH flood zones by county)
   - CDC/ATSDR Social Vulnerability Index (NH census tracts, 4 equity themes)
-  - NH municipal geography (Census 2020 — all NH towns with FIPS and population)
-  - Synthetic mock demand generator (pipeline testing)
-- **Dataset pipeline** — raw save → clean → metadata → preview → CSV download
-- **Weather × demand analysis** — joins daily peak MW with temperature, HDD, and CDD; dual-axis Recharts visualization
-- **Source status model** — `active`, `requires_key`, `research`, `not_implemented`, and `test_fixture_only` clearly labeled in the UI
+  - NH municipal geography (Census 2020, all NH towns with FIPS and population)
+- **Dataset pipeline**: raw save, clean, metadata, preview, CSV download
+- **Weather and demand analysis**: joins daily peak MW with temperature, HDD, and CDD; dual-axis Recharts visualization
+- **Source status model**: `active`, `requires_key`, `research`, `not_implemented`, and `test_fixture_only` clearly labeled in the UI
+- **Synthetic mock demand generator** for automated tests and offline pipeline development
 
 ---
 
@@ -59,14 +59,14 @@ The app supports live public connectors for electricity demand, fuel mix, wholes
 |---|---|
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, React Router v6, Recharts |
 | **Backend** | Python 3.11+, FastAPI, pandas, pydantic v2, uvicorn, httpx, openpyxl |
-| **Storage** | Local filesystem — `/data/raw`, `/data/cleaned`, `/data/exports`, `/data/metadata` |
+| **Storage** | Local filesystem: `/data/raw`, `/data/cleaned`, `/data/exports`, `/data/metadata` |
 | **Testing** | pytest (188 passing), Playwright frontend smoke tests |
 
 ---
 
 ## Getting Started
 
-You need two terminals running simultaneously — one for the API, one for the web app.
+You need two terminals running at the same time: one for the API, one for the web app.
 
 ### Prerequisites
 
@@ -75,7 +75,7 @@ You need two terminals running simultaneously — one for the API, one for the w
 
 ---
 
-### Terminal 1 — API (FastAPI)
+### Terminal 1: API (FastAPI)
 
 ```bash
 # From the repo root:
@@ -92,7 +92,7 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Create your .env (API keys are optional to start — see below)
+# Create your .env (API keys are optional to start, see below)
 cp .env.example .env
 
 # Start the API server
@@ -105,11 +105,11 @@ You should see:
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
 ```
 
-**Verify it's working:** open `http://localhost:8000/health` — you should get `{"status":"ok"}`.
+**Verify it's working:** open `http://localhost:8000/health`. You should get `{"status":"ok"}`.
 
 ---
 
-### Terminal 2 — Web App (React + Vite)
+### Terminal 2: Web App (React + Vite)
 
 Open a **new terminal** (keep Terminal 1 running):
 
@@ -147,45 +147,45 @@ Open `http://localhost:5173` in your browser.
 
 1. Open the web app at `http://localhost:5173`
 2. Click **Sources** in the nav
-3. Click **ISO-NE CSV Downloads** → **Fetch Latest**
-4. Click **Datasets** in the nav — the fetched data appears there
-5. Click the dataset → **Preview** to see the cleaned rows, or **Download CSV**
+3. Click **ISO-NE CSV Downloads**, then **Fetch Latest Data**
+4. Click **Datasets** in the nav; the fetched data appears there
+5. Click the dataset, then **Preview** to see the cleaned rows, or **Download CSV**
 
 All 13 sources in the [no-key table below](#no-api-key-required) work the same way.
 
 ### Try It Without Any API Key
 
-All of the following work immediately with no configuration:
+All of the following work with no configuration:
 
 | Source | What it fetches |
 |---|---|
 | **ISO-NE CSV Downloads** | Hourly real-time system demand for ISO New England |
-| **ISO-NE Generation Fuel Mix** | Hourly MW by fuel type — gas, nuclear, hydro, solar, wind, and more |
+| **ISO-NE Generation Fuel Mix** | Hourly MW by fuel type: gas, nuclear, hydro, solar, wind, and more |
 | **ISO-NE Hourly Load Forecast** | 7-day ahead hourly system load forecast |
 | **ISO-NE Zone LMP Prices** | Real-time hourly wholesale LMP for all ISO-NE zones including NH |
 | **NREL PVWatts Solar Estimates** | Monthly solar output for Manchester, Concord, Portsmouth, Keene (DEMO_KEY) |
 | **AFDC EV Charging Stations** | NH EV station locations, port counts, and access type (DEMO_KEY) |
 | **OpenEI Utility Rates** | Residential utility rates near NH service territory |
-| **EPA eGRID** | Subregion emission rates — CO2e, NOx, SO2 |
-| **EPA EJScreen** | NH block-group EJ indicators — pollution burden and demographic percentiles |
+| **EPA eGRID** | Subregion emission rates: CO2e, NOx, SO2 |
+| **EPA EJScreen** | NH block-group EJ indicators: pollution burden and demographic percentiles |
 | **EIA AMI Smart Meters** | NH utility smart meter deployment counts and penetration rates |
 | **FEMA Flood Maps** | NH flood zone designations by county (AE, X, VE zones) |
-| **CDC Social Vulnerability Index** | NH census tract SVI — 4 equity theme percentiles |
+| **CDC Social Vulnerability Index** | NH census tract SVI, 4 equity theme percentiles |
 | **NH Geodata** | All NH towns and cities with FIPS codes and 2020 Census population |
-| **Mock Electricity Demand** | Synthetic NH demand for pipeline testing |
 
-Suggested path: fetch **ISO-NE CSV** → **ISO-NE Fuel Mix** → **EPA EJScreen** or **CDC SVI** → run **Weather & Demand** analysis.
+Suggested path: fetch **ISO-NE CSV**, then **ISO-NE Fuel Mix**, then **EPA EJScreen** or **CDC SVI**, then run the **Weather & Demand** analysis.
 
 ---
 
 ## Testing
 
 ```bash
-# Backend — 188 tests
+# Backend: 188 tests
 cd apps/api
 pytest
 
-# Frontend smoke tests
+# Frontend smoke tests (starts the Vite dev server itself;
+# the API must already be running on port 8000)
 cd apps/web
 npx playwright test
 ```
@@ -197,15 +197,15 @@ npx playwright test
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/health` | Health check |
-| `GET` | `/sources` | List all 22 sources with full metadata |
-| `GET` | `/sources/{id}` | Source detail — status, access method, key requirements |
+| `GET` | `/sources` | List all sources with full metadata |
+| `GET` | `/sources/{id}` | Source detail: status, access method, key requirements |
 | `POST` | `/sources/{id}/fetch` | Fetch, clean, and store latest data |
 | `GET` | `/datasets` | List stored datasets |
 | `GET` | `/datasets/{id}` | Dataset detail and column list |
 | `GET` | `/datasets/{id}/preview?nrows=50` | Preview cleaned rows as JSON |
 | `GET` | `/datasets/{id}/download/cleaned` | Download cleaned CSV |
 | `GET` | `/datasets/{id}/download/raw` | Download raw CSV |
-| `POST` | `/analysis/weather-demand/join` | Generate weather × demand join |
+| `POST` | `/analysis/weather-demand/join` | Generate weather and demand join |
 | `GET` | `/analysis/weather-demand/latest` | Latest join dataset |
 | `GET` | `/analysis/weather-demand/{id}/download` | Download join CSV |
 
@@ -230,7 +230,8 @@ npx playwright test
 | NH Geodata (GRANIT) | GIS | All NH towns, FIPS, 2020 Census population |
 | NREL PVWatts Solar Estimates | Solar | Monthly solar output, key NH cities (DEMO_KEY) |
 | AFDC EV Charging Stations | EV | NH station locations and port counts (DEMO_KEY) |
-| Mock Electricity Demand | Electricity | Synthetic — pipeline testing only |
+
+There is also a synthetic **Mock Electricity Demand** generator used by the automated tests. It is hidden from the sources list by default (`GET /sources?include_mock=true` shows it).
 
 ### Requires API Key
 
@@ -245,22 +246,22 @@ npx playwright test
 
 | Source | Category | Status |
 |---|---|---|
-| Manchester GIS | GIS | `research` — no confirmed stable public API |
-| NHSaves | Regulatory | `not_implemented` — HTML/PDF, no structured API |
-| NH Public Utilities Commission | Regulatory | `not_implemented` — PDF filings only |
-| Eversource Sustainability Reports | Regulatory | `not_implemented` — annual PDFs only |
+| Manchester GIS | GIS | `research`: no confirmed stable public API |
+| NHSaves | Regulatory | `not_implemented`: HTML/PDF, no structured API |
+| NH Public Utilities Commission | Regulatory | `not_implemented`: PDF filings only |
+| Eversource Sustainability Reports | Regulatory | `not_implemented`: annual PDFs only |
 
 ---
 
 ## API Keys
 
-Keys go in `apps/api/.env` (gitignored — never committed).
+Keys go in `apps/api/.env` (gitignored, never committed). Connectors that need a key return a clear error if it is missing; nothing is hardcoded.
 
 ```env
 EIA_API_KEY=your_key_here         # EIA ISO-NE load + retail electricity + natural gas prices
 NOAA_TOKEN=your_key_here
-NREL_API_KEY=your_key_here        # optional — DEMO_KEY used by default for AFDC and PVWatts
-OPENEI_API_KEY=your_key_here      # optional — public access attempted first
+NREL_API_KEY=your_key_here        # optional; DEMO_KEY used by default for AFDC and PVWatts
+OPENEI_API_KEY=your_key_here      # optional; public access attempted first
 ```
 
 | Key | Source | Cost |
@@ -319,11 +320,19 @@ apps/
       services/    # apiClient, sourcesApi, datasetsApi
       types/       # source.ts, dataset.ts
 data/
-  raw/             # gitignored — fetched source files
-  cleaned/         # gitignored — cleaned CSVs
+  raw/             # gitignored, fetched source files
+  cleaned/         # gitignored, cleaned CSVs
   exports/         # gitignored
-  metadata/        # gitignored — dataset JSON records
+  metadata/        # gitignored, dataset JSON records
 ```
+
+---
+
+## Notes
+
+- These connectors depend on external public endpoints (ISO-NE transform/csv exports, EPA ArcGIS services, agency download URLs) that can change without notice. Where a URL or response schema still needs live re-verification, the connector source is marked with a TODO comment. If a fetch starts failing, check the endpoint noted in that connector first.
+- The connectors are tested against recorded fixtures; the EIA hourly load and NOAA connectors in particular should be verified against a live key before relying on their output.
+- Fetched data is stored on the local filesystem only. There is no database or scheduler; fetches are on demand.
 
 ---
 
