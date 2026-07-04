@@ -1,8 +1,16 @@
 import { expect, test } from '@playwright/test'
 
-test('dashboard page loads with app title', async ({ page }) => {
+test('story page loads at root with the V-curve chart', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByTestId('app-title')).toBeVisible()
+  await expect(page.getByTestId('story-page')).toBeVisible()
+  await expect(page.getByTestId('vcurve-chart').locator('svg').first()).toBeVisible({
+    timeout: 10000,
+  })
+})
+
+test('explorer dashboard loads', async ({ page }) => {
+  await page.goto('/explorer')
   await expect(page.getByTestId('dashboard-page')).toBeVisible()
 })
 
