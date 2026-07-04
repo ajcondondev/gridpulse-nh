@@ -34,7 +34,8 @@ function page(element: React.ReactNode) {
   )
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
   {
     path: '/',
     element: <Layout />,
@@ -48,7 +49,11 @@ const router = createBrowserRouter([
       { path: 'analysis/weather-demand', element: page(<WeatherDemandPage />) },
     ],
   },
-])
+  ],
+  // Follow Vite's base so the app works at / locally and under
+  // /gridpulse-nh/ on GitHub Pages.
+  { basename: import.meta.env.BASE_URL },
+)
 
 export default function App() {
   return <RouterProvider router={router} />

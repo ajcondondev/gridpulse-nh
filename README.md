@@ -2,18 +2,18 @@
 
 # GridPulse NH
 
-**Public utility, weather, EV, price, emissions, and resilience data in one workbench.**
+**Weather runs the grid — an interactive public-data story about New England electricity.**
 
+[![Live](https://img.shields.io/badge/live-ajcondondev.github.io%2Fgridpulse--nh-1d4ed8?style=flat-square)](https://ajcondondev.github.io/gridpulse-nh/)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![pandas](https://img.shields.io/badge/pandas-2-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
-[![Tests](https://img.shields.io/badge/tests-188_passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#testing)
+[![Observable Plot](https://img.shields.io/badge/Observable_Plot-charts-e0e0e0?style=flat-square)](https://observablehq.com/plot/)
+[![pandas](https://img.shields.io/badge/pandas-pipeline-150458?style=flat-square&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![Tests](https://img.shields.io/badge/tests-197_passing-22c55e?style=flat-square&logo=pytest&logoColor=white)](#testing)
 [![License](https://img.shields.io/badge/license-MIT-64748b?style=flat-square)](#license)
 
-**[Getting Started](#getting-started) · [API Reference](#api-reference) · [Data Sources](#data-sources) · [API Keys](#api-keys)**
+**[Live Story](https://ajcondondev.github.io/gridpulse-nh/) · [The Data Pipeline](#the-data-pipeline) · [Getting Started](#getting-started) · [Methodology](docs/methodology.md) · [Data Sources](#data-sources)**
 
 </div>
 
@@ -21,11 +21,45 @@
 
 ## Overview
 
-GridPulse NH is a full-stack utility data workbench focused on New Hampshire and ISO New England. The backend uses a connector-per-source pattern (each connector implements `fetch()` and `clean()`) and stores raw and cleaned files separately with dataset metadata, so every fetch can be previewed or downloaded without re-running the source request.
+GridPulse turns 18 months of real public data — hourly ISO New England electricity demand, generation by fuel, and New Hampshire weather — into an interactive, scroll-through data story:
 
-The app has live public connectors for electricity demand, fuel mix, wholesale prices, solar estimates, smart meter deployment, natural gas prices, weather, EV charging, utility rates, emissions, environmental justice, flood zones, social vulnerability, and municipal geography, plus a synthetic demand generator for pipeline testing and a weather and demand analysis workflow.
+1. **The heartbeat** — 30 days of hourly demand and its daily double-peak rhythm
+2. **The V-curve** — 546 days of temperature vs. peak demand, the signature shape of a weather-driven grid
+3. **A year of peaks** — a calendar heatmap showing the hard days clustering in deep winter and high summer
+4. **Event replay** — an hour-by-hour scrubbable replay of the June 2025 heat wave (25,898 MW peak, oil plants at 16% of the mix), with annotations computed from the data
+5. **The fuel mix** — what actually generates New England's power, day by day
 
-> **Disclaimer:** All data comes from publicly available APIs and government datasets. Not official Eversource software. Not affiliated with ISO New England or any utility.
+**The story runs with zero servers and zero API keys**: a Python pipeline fetches and normalizes the data into small, committed JSON artifacts, and the site is deployed statically to GitHub Pages. Every chart carries its source, caveats, and a freshness stamp.
+
+The repo also contains the **data workbench** the project grew from — a FastAPI backend with 19 tested connectors to public energy/weather/resilience datasets, browsable under **Data Explorer** when running locally.
+
+> **Disclaimer:** All data comes from publicly available APIs and government datasets. Educational/portfolio project — not affiliated with ISO New England, EIA, Eversource, or any utility. See [data source disclaimers](docs/data_source_disclaimers.md).
+
+---
+
+## The Data Pipeline
+
+```
+EIA-930 bulk files (hourly demand + fuel mix, keyless)   Open-Meteo / ERA5 (hourly temps, keyless)
+        │                                                        │
+        └──────────────► pipeline/ (Python + pandas) ◄───────────┘
+                                   │
+             data/raw (gitignored) → data/interim (gitignored)
+                                   │
+                    data/processed/*.json  ← committed, ~900 KB
+                                   │
+                 ┌─────────────────┴─────────────────┐
+            apps/web story page                (future) Remotion video
+```
+
+Rebuild everything (fetch + process) or rebuild offline from cached raw files:
+
+```bash
+apps/api/.venv/Scripts/python -m pipeline.run              # full refresh
+apps/api/.venv/Scripts/python -m pipeline.run --offline    # rebuild from cache
+```
+
+The event replay's featured week is **auto-selected** by `pipeline/pick_event.py`, which scores every day by demand percentile × temperature extremity — no hand-picking. Conventions, units, and honest limits are documented in [docs/methodology.md](docs/methodology.md).
 
 ---
 
@@ -57,16 +91,19 @@ The app has live public connectors for electricity demand, fuel mix, wholesale p
 
 | Layer | Technologies |
 |---|---|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, React Router v6, Recharts |
-| **Backend** | Python 3.11+, FastAPI, pandas, pydantic v2, uvicorn, httpx, openpyxl |
-| **Storage** | Local filesystem: `/data/raw`, `/data/cleaned`, `/data/exports`, `/data/metadata` |
-| **Testing** | pytest (188 passing), Playwright frontend smoke tests |
+| **Story frontend** | React 18, TypeScript, Vite, Tailwind CSS, Observable Plot, Motion, React Router v6 |
+| **Data pipeline** | Python 3.11+, pandas, httpx → committed JSON artifacts in `data/processed` |
+| **Workbench backend** | FastAPI, pydantic v2, uvicorn, openpyxl (local dev; the story needs no backend) |
+| **Storage** | Local filesystem: `data/raw`, `data/interim`, `data/cleaned`, `data/metadata` (gitignored); `data/processed` committed |
+| **Testing & CI** | pytest (188 API + 9 pipeline), Playwright smoke tests, GitHub Actions CI + Pages deploy |
 
 ---
 
 ## Getting Started
 
-You need two terminals running at the same time: one for the API, one for the web app.
+**Just want the story?** It's live at [ajcondondev.github.io/gridpulse-nh](https://ajcondondev.github.io/gridpulse-nh/) — or run only Terminal 2 below and open `http://localhost:5173` (the story page reads committed data and needs no API).
+
+**For the full workbench (Data Explorer, fetching new data)** you need two terminals running at the same time: one for the API, one for the web app.
 
 ### Prerequisites
 
@@ -184,11 +221,16 @@ Suggested path: fetch **ISO-NE CSV**, then **ISO-NE Fuel Mix**, then **EPA EJScr
 cd apps/api
 pytest
 
+# Pipeline transforms: 9 tests (from the repo root)
+apps/api/.venv/Scripts/python -m pytest pipeline/tests
+
 # Frontend smoke tests (starts the Vite dev server itself;
 # the API must already be running on port 8000)
 cd apps/web
 npx playwright test
 ```
+
+CI runs the backend tests, pipeline tests, and the production web build on every push; a separate workflow deploys the story to GitHub Pages.
 
 ---
 
@@ -276,7 +318,22 @@ OPENEI_API_KEY=your_key_here      # optional; public access attempted first
 ## Project Structure
 
 ```text
+pipeline/                       # public data -> committed artifacts
+  fetch_eia930.py               # EIA-930 bulk six-month files (keyless)
+  fetch_weather.py              # Open-Meteo / ERA5 hourly temps (keyless)
+  transforms.py                 # pure, unit-tested tidy transforms
+  pick_event.py                 # auto-selects the featured event window
+  build_processed.py, run.py    # artifact builder + orchestrator
+  tests/                        # 9 pytest tests
+data/
+  processed/                    # committed JSON artifacts (the app's data contract)
+  raw/ interim/ metadata/       # gitignored working tiers
 apps/
+  web/src/story/                # the story page
+    StoryPage.tsx
+    ChartCard.tsx, chartTheme.ts
+    charts/                     # HeartbeatChart, VCurveChart, CalendarHeatmap,
+                                # EventReplay (scrubber), FuelMixChart
   api/
     app/
       connectors/
@@ -319,11 +376,6 @@ apps/
       components/  # Layout, StatusBadge, DatasetTable, DownloadButton
       services/    # apiClient, sourcesApi, datasetsApi
       types/       # source.ts, dataset.ts
-data/
-  raw/             # gitignored, fetched source files
-  cleaned/         # gitignored, cleaned CSVs
-  exports/         # gitignored
-  metadata/        # gitignored, dataset JSON records
 ```
 
 ---
